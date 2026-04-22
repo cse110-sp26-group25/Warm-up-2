@@ -82,3 +82,23 @@ supported through **epilepsy safe mode, reduced motion settings, screen reader c
 game should have a **distinct recognizable theme with animated effects and reward sound cues**, and humorous elements that **playfully make fun of AI** as part of 
 the theme. Ensure animations meet reasonable duration guidelines so they are **not unrealistically short**. The final output should include **all files needed for 
 the project**, clearly separated and labeled, with clean structure and maintainable code that demonstrates best practices in modern web development.
+
+
+# Learnings from Iteration 1 
+- Linear Bet sizes (not just high and low)
+- No clocks
+- Larger slot machine 3x5
+
+
+# Learnings from Iteration 2
+- Top rankings should be visible at all times.
+- Chat needs to be active and not blank or unresponsive
+- Cheer Animations/ words splash across screen for non audio players
+- Other background animations required / Webpage too blank 
+
+# Learnings from Iteration 3
+- 
+- 
+  
+
+
