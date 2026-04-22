@@ -43,4 +43,35 @@
 #### Good front end
 1. The colors are pretty chill and easy to look at, but it's still leaning towards that black/blue schema
 2. The webpage is generally pretty responsive and does well with different screen dimensions
+3. There is functionality to turn off the music
+4. Volume slider in the bottom left corner to change volume of background music
+5. There is an option to turn off flashing lights in the bottom right
+6. There is an option to reduce the amount of movement in the program
+7. There is a contrast button that changes the webpage to have high contrast
+8. Colors look pretty distinct, so there's not too much weird color blending
+9. There is a light at the top of the machine which is similar to actual slot machines
+10. UI is generally pretty easy to read
+11. UX is pretty smooth
+
+#### Good back end
+1. Code is very modular
+2. lots of comments
+3. definite decrease in the amount of div slop there is
+4. The majority of values are variables rather than magic numbers
+5. Classes and IDs are generally pretty descriptive and self explanatory
+
+## Notes for next iteration:
+1. fix avatar functionalities
+2. chat box needs to be its own element that can scroll
+3. More bet sizes
+4. Keep red bar, but move it out of the way of other elements or make it disappear
+5. Move the jackpot to a less crowded part of the screen
+6. Give the webpage a favicon
+7. Make the webpage more interesting using an animation of a robot
+8. change the slot machine's 3x3 into a 3x5
+9. remove the clock
+10. Bigger win effects that cover the whole screen for a short duration
+11. generate rankings for the rankings tab
+12. use variable colors rather than hard coding their values
+13. make rng.js less accessible by dev tools
    
