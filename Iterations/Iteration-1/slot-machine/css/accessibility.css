@@ -1,0 +1,310 @@
+/**
+ * accessibility.css — Accessibility Overrides
+ *
+ * This file applies overrides for:
+ *  1. Epilepsy Safe Mode     — body.epilepsy-safe
+ *  2. Reduced Motion         — body.reduced-motion + prefers-reduced-motion
+ *  3. High Contrast Mode     — body.high-contrast
+ *  4. Screen Reader Support  — visually-hidden utility, ARIA live regions
+ *  5. Colour Accessibility   — improves text contrast ratios for low-vision
+ *  6. Focus Enhancement      — stronger focus indicators
+ *  7. Print Styles           — clean print layout (hides decorative elements)
+ *
+ * These classes are toggled by buttons in the settings footer (ui.js) or
+ * automatically applied based on OS preferences.
+ *
+ * WCAG 2.1 AA is the target compliance level:
+ *  • Text contrast ratio ≥ 4.5:1
+ *  • Interactive element contrast ≥ 3:1
+ *  • Focus indicators visible on all interactive elements
+ *  • No functionality requires distinguishing colour alone
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. EPILEPSY SAFE MODE  (body.epilepsy-safe)
+   ═══════════════════════════════════════════════════════════════════════════
+   Disables:
+   • Screen flash overlays
+   • Rapid particle animations
+   • Flashing win effects
+   • Cabinet light cycling
+   Slows down:
+   • Background shimmer
+   • Jackpot pulsing
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.epilepsy-safe .screen-flash,
+body.epilepsy-safe .particle,
+body.epilepsy-safe .gold-particle,
+body.epilepsy-safe .coin-particle {
+  display: none !important;
+}
+
+body.epilepsy-safe .light {
+  animation: none !important;
+  opacity: 0.6 !important;
+}
+
+body.epilepsy-safe .jackpot-amount {
+  animation: none !important;
+  text-shadow: 0 0 8px rgba(255,215,0,0.4) !important;
+}
+
+body.epilepsy-safe .win-display.jackpot {
+  animation: none !important;
+}
+
+body.epilepsy-safe body {
+  animation: none !important;
+}
+
+body.epilepsy-safe .spin-button.fidget-pulse,
+body.epilepsy-safe .spin-button.idle-bounce {
+  animation: none !important;
+}
+
+/* Tone down win highlight flashing to a solid glow */
+body.epilepsy-safe .reel.win-highlight {
+  animation: none !important;
+  border-color: #ffd700;
+  box-shadow: 0 0 20px rgba(255,215,0,0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. REDUCED MOTION  (body.reduced-motion + OS prefers-reduced-motion)
+   ═══════════════════════════════════════════════════════════════════════════
+   Respects the user's OS "reduce animations" setting. All decorative
+   animations are removed; functional transitions (showing/hiding panels,
+   opening modals) are preserved at shorter durations.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:   0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration:  0.01ms !important;
+    scroll-behavior:      auto  !important;
+  }
+}
+
+body.reduced-motion *,
+body.reduced-motion *::before,
+body.reduced-motion *::after {
+  animation-duration:    0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration:   0.01ms !important;
+  scroll-behavior:       auto  !important;
+}
+
+/* Keep a minimal win feedback even with reduced motion */
+body.reduced-motion .win-display.visible {
+  transition: opacity 0.15s ease !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. HIGH CONTRAST MODE  (body.high-contrast)
+   ═══════════════════════════════════════════════════════════════════════════
+   Boosts contrast ratios by:
+   • Switching to black background and white text
+   • Using stronger accent colours
+   • Removing subtle transparency effects
+   • Adding explicit borders where previously only colour differentiated items
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.high-contrast {
+  --clr-bg:             #000000;
+  --clr-bg-alt:         #0a0a0a;
+  --clr-surface:        #111111;
+  --clr-surface-raised: #222222;
+  --clr-border:         #555555;
+  --clr-border-bright:  #888888;
+  --clr-text:           #ffffff;
+  --clr-text-muted:     #cccccc;
+  --clr-text-dim:       #888888;
+  --clr-gold:           #ffff00;     /* Pure yellow for maximum contrast */
+  --clr-teal:           #00ffcc;     /* Bright cyan */
+  --clr-win:            #00ff44;
+  --clr-red:            #ff2222;
+}
+
+/* Ensure all backgrounds are fully opaque */
+body.high-contrast .machine-cabinet,
+body.high-contrast .reel,
+body.high-contrast .panel-content,
+body.high-contrast .chat-msg,
+body.high-contrast .achievement-item,
+body.high-contrast .quest-item,
+body.high-contrast .lb-entry {
+  background: var(--clr-surface) !important;
+}
+
+/* Stronger focus ring */
+body.high-contrast :focus-visible {
+  outline: 3px solid #ffffff !important;
+  outline-offset: 4px !important;
+}
+
+/* Increase text weight for labels */
+body.high-contrast .stat-label,
+body.high-contrast .bet-label,
+body.high-contrast .balance-label {
+  color: #aaaaaa !important;
+  font-weight: 700;
+}
+
+/* Remove subtle background gradients that reduce contrast */
+body.high-contrast .site-header {
+  background: #000000;
+  border-bottom-color: #666666;
+}
+
+body.high-contrast .payline {
+  border-top-color:    #ffff00;
+  border-bottom-color: #ffff00;
+  background: rgba(255,255,0,0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. SCREEN READER SUPPORT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * .sr-only — visually hides an element while keeping it accessible to
+ * screen readers and other assistive technologies.
+ * Use for text alternatives to icon-only controls.
+ */
+.sr-only {
+  position:   absolute;
+  width:      1px;
+  height:     1px;
+  padding:    0;
+  margin:     -1px;
+  overflow:   hidden;
+  clip:       rect(0, 0, 0, 0);
+  white-space:nowrap;
+  border:     0;
+}
+
+/**
+ * Ensure aria-live regions are large enough to trigger announcements.
+ * Screen readers only announce live region changes if the element is
+ * visible and non-empty.
+ */
+[aria-live="assertive"],
+[aria-live="polite"] {
+  min-height: 1px;
+}
+
+/**
+ * The reel elements announce their content via aria-label (set by ui.js).
+ * These rules ensure they are recognisable to AT as meaningful elements.
+ */
+.reel[role="img"] {
+  /* Already has role and aria-label; no extra CSS needed */
+}
+
+/**
+ * Win display — has role="status" and aria-atomic="true" so the entire
+ * "WIN 500" announcement fires when it becomes visible.
+ */
+.win-display[role="status"] {
+  /* Ensure the element is not hidden from AT when opacity:0 */
+  visibility: visible;
+}
+
+/**
+ * Quest progress bars — ARIA attributes are set in quests.js but we ensure
+ * the visual representation matches the numeric values at all times.
+ */
+.quest-progress-bar[role="progressbar"] {
+  /* Visually accurate; ARIA valuenow is set in JS */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. COLOUR ACCESSIBILITY — SYMBOL FALLBACK LABELS
+   ═══════════════════════════════════════════════════════════════════════════
+   For users with emoji rendering issues, each symbol slot has a text
+   fallback that is visible only when the emoji fails to render.
+   (The actual fallback text is set by the aria-label on the reel element.)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Colour-blind-friendly: wins indicated by text, not just colour */
+.win-display.visible::before {
+  content:     "WIN ";
+  font-size:   0.5em;
+  font-weight: normal;
+  letter-spacing: 0.2em;
+  display:     block;
+  color:       inherit;
+  opacity:     0.7;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. ENHANCED FOCUS INDICATORS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* All interactive elements get a visible outline when focused via keyboard */
+button:focus-visible,
+input:focus-visible,
+[role="radio"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline:        2px solid var(--clr-teal);
+  outline-offset: 3px;
+}
+
+/* The spin button needs a round focus ring */
+.spin-button:focus-visible {
+  outline:        3px solid var(--clr-teal);
+  outline-offset: 5px;
+  border-radius:  50%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. PRINT STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  /* Hide all interactive and decorative elements */
+  .spin-button,
+  .bet-controls,
+  .controls-section,
+  .settings-footer,
+  .side-panels,
+  .ai-taunt-bar,
+  .effects-layer,
+  .toast-container,
+  .cabinet-lights,
+  .payline {
+    display: none !important;
+  }
+
+  /* Show game state in black on white */
+  body {
+    background: #ffffff !important;
+    color:      #000000 !important;
+  }
+
+  .site-header {
+    background:   #ffffff !important;
+    border-bottom:1px solid #000 !important;
+    color:        #000 !important;
+  }
+
+  .game-title,
+  .jackpot-amount,
+  .balance-amount {
+    color:       #000000 !important;
+    text-shadow: none    !important;
+  }
+
+  .machine-cabinet {
+    background:  #f5f5f5 !important;
+    border:      2px solid #000 !important;
+    box-shadow:  none !important;
+  }
+
+  .reel {
+    background:  #ffffff !important;
+    border:      1px solid #333 !important;
+  }
+}

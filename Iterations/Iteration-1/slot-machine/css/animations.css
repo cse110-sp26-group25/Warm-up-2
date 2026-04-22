@@ -1,0 +1,283 @@
+/**
+ * animations.css — All CSS Keyframe Animations
+ *
+ * Centralising animations here keeps main.css readable and makes it easy
+ * for future developers to review, tweak, or replace animation values.
+ *
+ * DURATION GUIDELINES (per project spec "reasonable animation durations"):
+ *  • UI micro-interactions (button press, tap): 80–150ms
+ *  • Symbol transitions, reel-land: 200–350ms
+ *  • Win celebrations: 800ms–2s (normal win), 3–6s (jackpot)
+ *  • Particle lifetimes: 600ms–1.2s
+ *  • Ambient / idle animations: 2–4s (looping)
+ *  • Engagement pulsing: 8–12s cycles
+ *
+ * All animations that could trigger photosensitive responses (flashing,
+ * rapid colour change) are suppressed by the .epilepsy-safe class defined
+ * in accessibility.css, and by prefers-reduced-motion media query.
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REEL ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * reel-land — subtle "bounce" when a reel stops.
+ * Simulates mechanical deceleration with a slight compression.
+ */
+@keyframes reel-land {
+  0%   { transform: scaleY(1);    }
+  30%  { transform: scaleY(0.94); }
+  65%  { transform: scaleY(1.03); }
+  100% { transform: scaleY(1);    }
+}
+
+/**
+ * reel-win-flash — border/glow cycles on winning reel after a match.
+ * 3 iterations at 400ms each = 1.2s total.
+ */
+@keyframes reel-win-flash {
+  0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.5); border-color: #ffd700; }
+  50%       { box-shadow: 0 0 40px rgba(255,215,0,0.9); border-color: #ffee55; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SYMBOL ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * symbol-pop — winning centre symbol scales up slightly on reveal.
+ */
+@keyframes symbol-pop {
+  0%   { transform: scale(1);    }
+  40%  { transform: scale(1.22); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1);    }
+}
+
+.center-symbol.win-pop {
+  animation: symbol-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/**
+ * near-miss-shake — the "miss" reel wobbles to convey "so close".
+ */
+@keyframes near-miss-shake {
+  0%   { transform: translateX(0);    }
+  15%  { transform: translateX(-6px); }
+  30%  { transform: translateX(5px);  }
+  45%  { transform: translateX(-4px); }
+  60%  { transform: translateX(3px);  }
+  75%  { transform: translateX(-2px); }
+  100% { transform: translateX(0);    }
+}
+
+.near-miss-shake { animation: near-miss-shake 0.55s ease both; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WIN DISPLAY ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * jackpot-pulse — the jackpot win amount throbs with a glow.
+ * Runs as infinite alternate on .win-display.jackpot.
+ */
+@keyframes jackpot-pulse {
+  from { text-shadow: 0 0 20px rgba(255,215,0,0.6); transform: scale(1);    }
+  to   { text-shadow: 0 0 50px rgba(255,215,0,1.0), 0 0 80px rgba(255,165,0,0.6); transform: scale(1.05); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PARTICLE EFFECTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * particle-burst — CSS variables --vx, --vy, --rot set per-element in JS
+ * to randomise trajectory. Duration also set per-element.
+ * Total animation: 800–1400ms (set via JS animation-duration override).
+ */
+@keyframes particle-burst {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(var(--vx, 80px), var(--vy, -120px)) rotate(var(--rot, 360deg)) scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* Gold version: larger and slower */
+.gold-particle { font-size: 1.8rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   JACKPOT CELEBRATION ELEMENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * confetti-fall — used for confetti pieces that appear on jackpot.
+ * Individual elements are created by JS and placed fixed on screen.
+ */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-20px) rotate(0deg) scaleX(1);
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg) scaleX(0.5);
+    opacity: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HEADER / JACKPOT ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * jackpot-glow — the jackpot counter in the header subtly breathes to
+ * draw attention to its growing value.
+ */
+@keyframes jackpot-glow {
+  0%, 100% { text-shadow: 0 0 8px rgba(255,215,0,0.4); }
+  50%       { text-shadow: 0 0 18px rgba(255,215,0,0.85), 0 0 30px rgba(255,165,0,0.4); }
+}
+
+.jackpot-amount { animation: jackpot-glow 3s ease infinite; }
+
+/**
+ * light-cycle — the decorative cabinet lights pulse in sequence.
+ */
+@keyframes light-cycle {
+  0%, 100% { opacity: 0.35; transform: scale(1);    box-shadow: none; }
+  50%       { opacity: 1;    transform: scale(1.25); box-shadow: 0 0 8px currentColor; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPIN BUTTON ENGAGEMENT ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * fidget-pulse — subtle scale+glow that runs every few seconds when idle
+ * to invite the player to spin again.
+ * Duration: 1.2s (applied via JS by adding/removing class).
+ */
+@keyframes fidget-pulse {
+  0%   { transform: scale(1);    box-shadow: 0 0 30px rgba(255,59,59,0.4); }
+  30%  { transform: scale(1.07); box-shadow: 0 0 55px rgba(255,59,59,0.7); }
+  60%  { transform: scale(1.03); box-shadow: 0 0 40px rgba(255,59,59,0.5); }
+  100% { transform: scale(1);    box-shadow: 0 0 30px rgba(255,59,59,0.4); }
+}
+
+.spin-button.fidget-pulse { animation: fidget-pulse 1.2s ease both; }
+
+/**
+ * idle-bounce — a more conspicuous bounce used after a long idle period.
+ * Duration: 2s.
+ */
+@keyframes idle-bounce {
+  0%, 100% { transform: translateY(0)  scale(1);    }
+  20%       { transform: translateY(-12px) scale(1.06); }
+  40%       { transform: translateY(0)  scale(0.98); }
+  60%       { transform: translateY(-6px)  scale(1.03); }
+  80%       { transform: translateY(0)  scale(1);    }
+}
+
+.spin-button.idle-bounce { animation: idle-bounce 2s ease both; }
+
+/**
+ * spinning — subtle rotation on the button label while reels are going.
+ */
+@keyframes btn-spin-ring {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+.spin-button.spinning::after {
+  content:      "";
+  position:     absolute;
+  inset:        -4px;
+  border-radius:var(--radius-round);
+  border:       3px solid transparent;
+  border-top-color: rgba(255,255,255,0.5);
+  animation:    btn-spin-ring 0.7s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOAST NOTIFICATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Achievement unlock: the toast slides in from below with a bounce.
+ * Handled by the .visible class transition in main.css, but enhanced here.
+ */
+@keyframes toast-slide-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+.toast.visible { animation: toast-slide-in 0.28s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AMBIENT / BACKGROUND
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * background-shimmer — very subtle noise shift on the body background
+ * to prevent the screen feeling "static". Slow enough to be subconscious.
+ */
+@keyframes bg-shimmer {
+  0%   { background-position: 0% 50%;   }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%;   }
+}
+
+body {
+  background-image:    radial-gradient(ellipse at 20% 40%, rgba(0,100,80,0.05) 0%, transparent 60%),
+                       radial-gradient(ellipse at 80% 60%, rgba(30,60,120,0.08) 0%, transparent 60%);
+  background-size:     200% 200%;
+  animation:           bg-shimmer 18s ease infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEADERBOARD ENTRY ENTRANCE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes lb-fade-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+.lb-entry {
+  animation: lb-fade-in 0.3s ease both;
+}
+
+/* Stagger each entry */
+.lb-entry:nth-child(1)  { animation-delay: 0.0s; }
+.lb-entry:nth-child(2)  { animation-delay: 0.05s; }
+.lb-entry:nth-child(3)  { animation-delay: 0.10s; }
+.lb-entry:nth-child(4)  { animation-delay: 0.15s; }
+.lb-entry:nth-child(5)  { animation-delay: 0.20s; }
+.lb-entry:nth-child(6)  { animation-delay: 0.25s; }
+.lb-entry:nth-child(7)  { animation-delay: 0.30s; }
+.lb-entry:nth-child(8)  { animation-delay: 0.35s; }
+.lb-entry:nth-child(9)  { animation-delay: 0.40s; }
+.lb-entry:nth-child(10) { animation-delay: 0.45s; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACHIEVEMENT UNLOCK GLOW
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes ach-unlock {
+  0%   { background: rgba(255,215,0,0.25); }
+  100% { background: rgba(255,215,0,0.06); }
+}
+
+.achievement-item.just-unlocked {
+  animation: ach-unlock 1.5s ease forwards;
+}
