@@ -18,15 +18,24 @@
 ### Downsides
 
 #### Front end issues
-1. The webpage starts with
-
+1. User name can be put in but the color makes it hard to read. The avatar is just an emoji. More customization would be nice.
+2. The chat box does not reply to user's message but generates random messages at randomm intervals.
+3. The robot icon just sits on top of the slot machine and does little to no animation.
+4. The webpage on the whole still looks quite blank.
+5. There is no audio currently. No background music or sound effects.
+6. The user's score still needs to be ohysically saved for it to show up in the rankings, it is not automatic.
+7. The rankings are in a different tab. There is enough space on the original page to show at least the top three.
+8. The coin icons that pop up during the winnings are minimal and not are too faint. ( Did not even know they were coins at first )
+9. There is no words popping up upon winning.
+    
 #### Back end issues
 1. Accessibility js fil
 
 ### Upsides
 
 #### Good front end
-1. The colors are pretty chill an
+1. The webage succcessfully allows you to pick your avatar and name.
+2. 
 
 #### Good back end
 1. Code is 
