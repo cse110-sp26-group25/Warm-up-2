@@ -1,0 +1,1698 @@
+/* ============================================================
+   styles.css — RoboSlots v2
+   Single-file stylesheet using CSS custom properties throughout.
+   No hardcoded colour values outside the :root block.
+
+   Sections (ctrl+f the header to jump):
+     1. Custom Properties (design tokens)
+     2. CSS Reset & Base
+     3. Layout — App Shell
+     4. Header & Navigation
+     5. Tab Panels
+     6. Game Panel — three-column layout
+     7. Stats Sidebar
+     8. Slot Machine — 3×5 Grid
+     9. Reel Cells & States
+    10. Spin Button
+    11. Bet Chips
+    12. Chat Sidebar
+    13. Leaderboard Tab
+    14. Help / Paytable Tab
+    15. Avatar Dialog
+    16. Win Overlay (full-screen win effect)
+    17. Particle Effects
+    18. Robot Mascot (CSS art)
+    19. Footer / Controls Bar
+    20. Toasts / Notifications
+    21. Utility Classes
+    22. Animations & Keyframes
+    23. Responsive — Mobile
+    24. Accessibility — Reduced Motion
+    25. Accessibility — High Contrast
+   ============================================================ */
+
+
+/* ── 1. Custom Properties ─────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg-page:       #080e1a;
+  --bg-surface:    #0f1729;
+  --bg-panel:      #141e35;
+  --bg-card:       #1a2545;
+  --bg-inset:      #111827;
+
+  /* Accent / brand colours */
+  --accent-blue:   #00b4d8;
+  --accent-green:  #06ffa5;
+  --accent-gold:   #ffd60a;
+  --accent-orange: #ff9f43;
+  --accent-red:    #ff6b6b;
+  --accent-purple: #c77dff;
+  --accent-robot:  #7c83fd;  /* robot / primary brand */
+
+  /* Semantic */
+  --color-win:     var(--accent-green);
+  --color-jackpot: var(--accent-gold);
+  --color-danger:  var(--accent-red);
+  --color-info:    var(--accent-blue);
+
+  /* Text */
+  --text-primary:   #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted:     #4a5568;
+  --text-on-accent: #080e1a;
+
+  /* Borders & shadows */
+  --border:         rgba(255, 255, 255, 0.08);
+  --border-strong:  rgba(255, 255, 255, 0.18);
+  --shadow-sm:      0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md:      0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-glow:    0 0 20px rgba(0, 180, 216, 0.25);
+  --shadow-gold:    0 0 30px rgba(255, 214, 10, 0.4);
+
+  /* Spacing scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-main:  'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono:  'Cascadia Code', 'Fira Code', monospace;
+  --font-display: 'Segoe UI', system-ui, sans-serif;
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+
+  /* Transitions */
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow:   400ms ease;
+
+  /* Grid layout */
+  --sidebar-w: 220px;
+  --chat-w:    240px;
+  --header-h:  64px;
+  --footer-h:  56px;
+}
+
+
+/* ── 2. CSS Reset & Base ──────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family:      var(--font-main);
+  font-size:        var(--text-base);
+  color:            var(--text-primary);
+  background-color: var(--bg-page);
+  min-height:       100dvh;
+  display:          flex;
+  flex-direction:   column;
+  overflow-x:       hidden;
+}
+
+button {
+  font-family: inherit;
+  cursor:      pointer;
+  border:      none;
+  background:  transparent;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size:   inherit;
+}
+
+img, svg { display: block; max-width: 100%; }
+
+a { color: var(--accent-blue); }
+
+/* Screen-reader only */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip link (keyboard / SR users) */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 9999;
+  padding: var(--space-3) var(--space-5);
+  background: var(--accent-robot);
+  color: var(--text-on-accent);
+  font-weight: 700;
+  border-radius: 0 0 var(--radius-md) 0;
+  transition: top var(--transition-fast);
+}
+.skip-link:focus { top: 0; }
+
+
+/* ── 3. Layout — App Shell ────────────────────────────────── */
+.app-header {
+  position:   sticky;
+  top:        0;
+  z-index:    100;
+  height:     var(--header-h);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  display:    flex;
+  align-items: center;
+  gap:        var(--space-4);
+  padding:    0 var(--space-5);
+}
+
+.app-main {
+  flex:       1;
+  min-height: 0;
+  padding:    var(--space-4) var(--space-5);
+}
+
+.app-footer {
+  height:     var(--footer-h);
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  display:    flex;
+  align-items: center;
+  padding:    0 var(--space-5);
+  gap:        var(--space-5);
+}
+
+
+/* ── 4. Header & Navigation ───────────────────────────────── */
+.header-brand {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.brand-logo {
+  font-size: var(--text-2xl);
+  line-height: 1;
+}
+
+.brand-name {
+  font-size:   var(--text-xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--accent-robot), var(--accent-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.main-nav {
+  display:   flex;
+  gap:       var(--space-1);
+  flex:      1;
+}
+
+.tab-btn {
+  padding:       var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size:     var(--text-sm);
+  font-weight:   600;
+  color:         var(--text-secondary);
+  transition:    background var(--transition-fast),
+                 color var(--transition-fast);
+}
+.tab-btn:hover { background: var(--bg-card); color: var(--text-primary); }
+.tab-btn.is-active {
+  background: var(--accent-robot);
+  color:      var(--text-on-accent);
+}
+
+.header-right {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-3);
+  flex-shrink: 0;
+}
+
+/* Player avatar/name display in header */
+.player-badge {
+  display:       flex;
+  align-items:   center;
+  gap:           var(--space-2);
+  padding:       var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background:    var(--bg-card);
+  border:        1px solid var(--border);
+  cursor:        pointer;
+  transition:    border-color var(--transition-fast);
+}
+.player-badge:hover { border-color: var(--accent-robot); }
+
+.player-av {
+  width:         32px;
+  height:        32px;
+  border-radius: 50%;
+  background:    var(--av-color, var(--accent-robot));
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  font-size:     var(--text-lg);
+}
+
+.player-name {
+  font-size:   var(--text-sm);
+  font-weight: 600;
+  max-width:   100px;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* ── 5. Tab Panels ────────────────────────────────────────── */
+.tab-panel { display: none; }
+.tab-panel.is-active { display: block; }
+/* Explicit hidden attribute support */
+.tab-panel[hidden] { display: none; }
+
+
+/* ── 6. Game Panel — three-column layout ──────────────────── */
+.game-layout {
+  display:               grid;
+  grid-template-columns: var(--sidebar-w) 1fr var(--chat-w);
+  grid-template-areas:   'stats machine chat';
+  gap:                   var(--space-4);
+  align-items:           start;
+  min-height:            calc(100dvh - var(--header-h) - var(--footer-h) - 2 * var(--space-4));
+}
+
+
+/* ── 7. Stats Sidebar ─────────────────────────────────────── */
+.stats-sidebar {
+  grid-area:    stats;
+  display:      flex;
+  flex-direction: column;
+  gap:          var(--space-3);
+}
+
+.info-box {
+  background:    var(--bg-panel);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding:       var(--space-4);
+  display:       flex;
+  flex-direction: column;
+  gap:           var(--space-1);
+}
+
+.info-label {
+  font-size:   var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color:       var(--text-muted);
+}
+
+.info-value {
+  font-size:   var(--text-2xl);
+  font-weight: 800;
+  color:       var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.info-box--balance .info-value { color: var(--accent-green); }
+.info-box--jackpot .info-value {
+  color: var(--accent-gold);
+  text-shadow: 0 0 12px rgba(255, 214, 10, 0.5);
+}
+
+/* Jackpot box pulsing glow */
+.info-box--jackpot {
+  border-color: rgba(255, 214, 10, 0.3);
+  animation: jackpot-pulse 3s ease-in-out infinite;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+}
+.stat-key   { color: var(--text-secondary); }
+.stat-val   { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+
+/* ── 8. Slot Machine — 3×5 Grid ───────────────────────────── */
+.machine-section {
+  grid-area:    machine;
+  display:      flex;
+  flex-direction: column;
+  align-items:  center;
+  gap:          var(--space-4);
+}
+
+/* Robot mascot — positioned above the machine */
+.machine-top {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-4);
+  width:       100%;
+  justify-content: center;
+}
+
+.machine-cabinet {
+  background:    var(--bg-panel);
+  border:        2px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding:       var(--space-4);
+  box-shadow:    var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.06);
+  width:         100%;
+  max-width:     640px;
+  position:      relative;
+}
+
+/* Decorative cabinet lights */
+.cabinet-lights {
+  display:         flex;
+  justify-content: space-around;
+  margin-bottom:   var(--space-3);
+}
+.cabinet-light {
+  width:         10px;
+  height:        10px;
+  border-radius: 50%;
+  animation:     light-blink 1.4s ease-in-out infinite;
+}
+.cabinet-light:nth-child(1) { background: var(--accent-red);    animation-delay: 0ms; }
+.cabinet-light:nth-child(2) { background: var(--accent-orange); animation-delay: 200ms; }
+.cabinet-light:nth-child(3) { background: var(--accent-gold);   animation-delay: 400ms; }
+.cabinet-light:nth-child(4) { background: var(--accent-green);  animation-delay: 600ms; }
+.cabinet-light:nth-child(5) { background: var(--accent-blue);   animation-delay: 800ms; }
+
+.reels-window {
+  background:    var(--bg-inset);
+  border-radius: var(--radius-md);
+  overflow:      hidden;
+  border:        2px solid rgba(255,255,255,0.06);
+  position:      relative;
+}
+
+/* Subtle vignette over the reels for depth */
+.reels-window::after {
+  content:  '';
+  position: absolute;
+  inset:    0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+  pointer-events: none;
+  z-index:  1;
+}
+
+#reels-grid {
+  display:               grid;
+  grid-template-columns: repeat(var(--grid-cols, 5), 1fr);
+  grid-template-rows:    repeat(var(--grid-rows, 3), 1fr);
+}
+
+
+/* ── 9. Reel Cells & States ───────────────────────────────── */
+.reel-cell {
+  aspect-ratio: 1;
+  display:      flex;
+  align-items:  center;
+  justify-content: center;
+  font-size:    clamp(1.6rem, 3.5vw, 2.4rem);
+  line-height:  1;
+  user-select:  none;
+  position:     relative;
+  transition:   background var(--transition-fast);
+  min-height:   70px;
+}
+
+/* Divider between reels */
+.reel-divider { border-right: 1px solid rgba(255,255,255,0.07); }
+
+/* Bottom row separator */
+.reel-cell[data-row="0"] { border-bottom: 1px solid rgba(255,255,255,0.07); }
+.reel-cell[data-row="1"] { border-bottom: 1px solid rgba(255,255,255,0.07); }
+
+/* Spinning state — blur and opacity */
+.reel-cell.is-spinning {
+  animation: cell-blur 0.055s linear infinite;
+  opacity:   0.75;
+}
+
+/* Landing bounce when reel stops */
+.reel-cell.is-landing {
+  animation: cell-land 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Win highlight — colour driven by CSS custom property set by JS */
+.reel-cell.is-winner {
+  background: color-mix(in srgb, var(--line-color, var(--accent-green)) 18%, transparent);
+  border-color: var(--line-color, var(--accent-green));
+  box-shadow:  0 0 12px var(--line-color, var(--accent-green));
+  animation:   cell-win-pulse 0.6s ease-in-out;
+  z-index:     2;
+}
+.reel-cell.is-winner::after {
+  content:       '';
+  position:      absolute;
+  inset:         0;
+  border:        2px solid var(--line-color, var(--accent-green));
+  border-radius: 4px;
+  opacity:       0.7;
+  pointer-events: none;
+}
+
+
+/* ── 10. Spin Button ──────────────────────────────────────── */
+.spin-controls {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-4);
+  width:       100%;
+  max-width:   640px;
+  justify-content: center;
+}
+
+.spin-btn {
+  --btn-size: 88px;
+  width:       var(--btn-size);
+  height:      var(--btn-size);
+  border-radius: 50%;
+  background:  conic-gradient(from 0deg, var(--accent-robot), var(--accent-blue), var(--accent-robot));
+  color:       #fff;
+  font-size:   var(--text-sm);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow:  0 0 0 4px var(--bg-panel), 0 0 0 6px var(--accent-robot), var(--shadow-md);
+  transition:  transform var(--transition-fast),
+               box-shadow var(--transition-fast),
+               opacity var(--transition-fast);
+  position:    relative;
+  overflow:    hidden;
+}
+
+.spin-btn::before {
+  content:     '';
+  position:    absolute;
+  inset:       0;
+  border-radius: 50%;
+  background:  rgba(255,255,255,0.1);
+  opacity:     0;
+  transition:  opacity var(--transition-fast);
+}
+
+.spin-btn:hover:not(:disabled)::before { opacity: 1; }
+.spin-btn:active:not(:disabled) { transform: scale(0.94); }
+.spin-btn:disabled {
+  opacity: 0.5;
+  cursor:  not-allowed;
+}
+
+.spin-btn-inner {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            2px;
+  line-height:    1.1;
+}
+.spin-btn-label { font-size: var(--text-base); }
+.spin-btn-sub   { font-size: var(--text-xs); opacity: 0.75; }
+
+/* Spinning state animation */
+.spin-btn.is-spinning {
+  animation: btn-rotate 0.8s linear infinite;
+}
+
+/* Idle pulse to draw attention */
+.spin-btn.idle-pulse {
+  animation: idle-pulse 1.2s ease-in-out;
+}
+
+
+/* ── 11. Bet Chips ────────────────────────────────────────── */
+.bet-section {
+  display:       flex;
+  flex-direction: column;
+  align-items:   center;
+  gap:           var(--space-2);
+  width:         100%;
+  max-width:     640px;
+}
+
+.bet-label-row {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+  font-size:   var(--text-sm);
+  color:       var(--text-secondary);
+}
+
+.current-bet-value {
+  font-weight: 800;
+  color:       var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.bet-chips {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       var(--space-2);
+  justify-content: center;
+}
+
+.bet-btn {
+  padding:       var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  background:    var(--bg-card);
+  border:        2px solid var(--border);
+  color:         var(--text-secondary);
+  font-size:     var(--text-sm);
+  font-weight:   700;
+  transition:    all var(--transition-fast);
+  min-width:     52px;
+  text-align:    center;
+}
+
+/* Chip colours by value — subtle gradient backgrounds */
+.bet-btn[data-bet="5"]   { --chip-hue: var(--accent-red); }
+.bet-btn[data-bet="10"]  { --chip-hue: var(--accent-orange); }
+.bet-btn[data-bet="25"]  { --chip-hue: var(--accent-gold); }
+.bet-btn[data-bet="50"]  { --chip-hue: var(--accent-green); }
+.bet-btn[data-bet="100"] { --chip-hue: var(--accent-blue); }
+.bet-btn[data-bet="250"] { --chip-hue: var(--accent-purple); }
+.bet-btn[data-bet="500"] { --chip-hue: var(--accent-robot); }
+
+.bet-btn:hover:not(.is-active) {
+  border-color: var(--chip-hue, var(--border-strong));
+  color:        var(--text-primary);
+  transform:    translateY(-2px);
+}
+
+.bet-btn.is-active {
+  background:   var(--chip-hue, var(--accent-robot));
+  border-color: transparent;
+  color:        var(--text-on-accent);
+  box-shadow:   0 0 12px color-mix(in srgb, var(--chip-hue, var(--accent-robot)) 60%, transparent);
+}
+
+
+/* ── 12. Chat Sidebar ─────────────────────────────────────── */
+.chat-sidebar {
+  grid-area:     chat;
+  display:       flex;
+  flex-direction: column;
+  background:    var(--bg-panel);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow:      hidden;
+  max-height:    calc(100dvh - var(--header-h) - var(--footer-h) - 2 * var(--space-4));
+}
+
+.chat-header {
+  padding:     var(--space-3) var(--space-4);
+  font-size:   var(--text-sm);
+  font-weight: 700;
+  color:       var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+}
+
+/* Scrollable message area — fixed height prevents page stretching */
+.chat-messages {
+  flex:        1;
+  overflow-y:  auto;
+  padding:     var(--space-3);
+  display:     flex;
+  flex-direction: column;
+  gap:         var(--space-2);
+  /* Thin custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.chat-messages::-webkit-scrollbar       { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+.chat-msg {
+  font-size:   var(--text-xs);
+  line-height: 1.5;
+  padding:     var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  word-break:  break-word;
+}
+
+.chat-msg--system {
+  background: var(--bg-card);
+  color:      var(--text-secondary);
+}
+.chat-msg--user {
+  background: color-mix(in srgb, var(--accent-robot) 20%, transparent);
+  color:      var(--text-primary);
+  align-self: flex-end;
+  max-width:  85%;
+}
+
+.chat-input-area {
+  display:     flex;
+  gap:         var(--space-2);
+  padding:     var(--space-3);
+  border-top:  1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.chat-input {
+  flex:          1;
+  background:    var(--bg-inset);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding:       var(--space-2) var(--space-3);
+  color:         var(--text-primary);
+  font-size:     var(--text-xs);
+  transition:    border-color var(--transition-fast);
+}
+.chat-input:focus {
+  outline:      none;
+  border-color: var(--accent-robot);
+}
+.chat-input::placeholder { color: var(--text-muted); }
+
+.chat-send-btn {
+  background:    var(--accent-robot);
+  color:         #fff;
+  padding:       var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size:     var(--text-xs);
+  font-weight:   700;
+  transition:    opacity var(--transition-fast);
+  white-space:   nowrap;
+}
+.chat-send-btn:hover { opacity: 0.85; }
+
+
+/* ── 13. Leaderboard Tab ──────────────────────────────────── */
+#tab-leaderboard {
+  max-width: 900px;
+  margin:    0 auto;
+}
+
+.lb-header {
+  display:     flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.lb-title {
+  font-size:   var(--text-2xl);
+  font-weight: 800;
+}
+
+.lb-actions { display: flex; gap: var(--space-3); }
+
+.btn {
+  padding:       var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size:     var(--text-sm);
+  font-weight:   700;
+  transition:    all var(--transition-fast);
+}
+.btn--primary {
+  background: var(--accent-robot);
+  color:      #fff;
+}
+.btn--primary:hover { opacity: 0.88; }
+.btn--ghost {
+  background: var(--bg-card);
+  border:     1px solid var(--border);
+  color:      var(--text-secondary);
+}
+.btn--ghost:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.btn--danger {
+  background: transparent;
+  border:     1px solid var(--color-danger);
+  color:      var(--color-danger);
+}
+.btn--danger:hover { background: color-mix(in srgb, var(--color-danger) 15%, transparent); }
+
+.leaderboard-table {
+  width:           100%;
+  border-collapse: separate;
+  border-spacing:  0 var(--space-1);
+}
+
+.leaderboard-table th {
+  text-align:     left;
+  font-size:      var(--text-xs);
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color:          var(--text-muted);
+  padding:        var(--space-2) var(--space-3);
+}
+
+.leaderboard-table tbody tr {
+  background:    var(--bg-panel);
+  border-radius: var(--radius-md);
+  transition:    background var(--transition-fast);
+}
+.leaderboard-table tbody tr:hover { background: var(--bg-card); }
+
+.leaderboard-table td {
+  padding: var(--space-3);
+  vertical-align: middle;
+}
+.leaderboard-table td:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+.leaderboard-table td:last-child  { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+
+.lb-top { background: color-mix(in srgb, var(--accent-gold) 8%, var(--bg-panel)) !important; }
+.lb-rank { font-size: var(--text-xl); text-align: center; width: 48px; }
+.lb-player {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+}
+.lb-av {
+  width:         32px;
+  height:        32px;
+  border-radius: 50%;
+  background:    var(--av-color, var(--accent-robot));
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  font-size:     var(--text-base);
+  flex-shrink:   0;
+}
+.lb-name   { font-weight: 600; }
+.lb-num    { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; }
+.lb-muted  { color: var(--text-muted); font-size: var(--text-xs); }
+.lb-empty  { text-align: center; color: var(--text-muted); padding: var(--space-8) 0; }
+
+
+/* ── 14. Help / Paytable Tab ──────────────────────────────── */
+#tab-help {
+  max-width: 700px;
+  margin:    0 auto;
+}
+
+.help-title { font-size: var(--text-2xl); font-weight: 800; margin-bottom: var(--space-5); }
+
+.paytable-card {
+  background:    var(--bg-panel);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow:      hidden;
+  margin-bottom: var(--space-5);
+}
+
+.paytable-card table {
+  width:           100%;
+  border-collapse: collapse;
+}
+.paytable-card th {
+  background:  var(--bg-card);
+  padding:     var(--space-3) var(--space-4);
+  text-align:  left;
+  font-size:   var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color:       var(--text-muted);
+}
+.paytable-card td {
+  padding:     var(--space-3) var(--space-4);
+  font-size:   var(--text-sm);
+  border-top:  1px solid var(--border);
+}
+.pt-sym { font-size: var(--text-xl); width: 40px; }
+.pt-sym svg { width: 36px; height: 36px; display: block; }
+.pt-num { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Payline diagram */
+.paylines-grid {
+  display:               grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:                   var(--space-3);
+  margin-top:            var(--space-4);
+}
+.payline-card {
+  background:    var(--bg-panel);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding:       var(--space-3);
+  display:       flex;
+  flex-direction: column;
+  gap:           var(--space-2);
+  align-items:   center;
+}
+.pl-name {
+  font-size:  var(--text-xs);
+  font-weight: 700;
+  color:      var(--text-secondary);
+}
+.pl-grid {
+  display:               grid;
+  grid-template-columns: repeat(5, 16px);
+  grid-template-rows:    repeat(3, 16px);
+  gap:                   2px;
+}
+.pl-cell {
+  width:         16px;
+  height:        16px;
+  border-radius: 3px;
+  background:    var(--bg-inset);
+  border:        1px solid var(--border);
+}
+.pl-cell.active { background: var(--line-color, var(--accent-green)); border-color: transparent; }
+
+
+/* ── 15. Avatar Dialog ────────────────────────────────────── */
+/* Native <dialog> element — browser handles focus trap and Escape key */
+#avatar-dialog {
+  background: transparent;
+  border:     none;
+  padding:    0;
+  max-width:  560px;
+  width:      calc(100% - 2rem);
+}
+
+/* Backdrop overlay */
+#avatar-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.dialog-panel {
+  background:    var(--bg-panel);
+  border:        1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  overflow:      hidden;
+  box-shadow:    var(--shadow-md), 0 0 40px rgba(124, 131, 253, 0.2);
+}
+
+.dialog-header {
+  display:       flex;
+  align-items:   center;
+  justify-content: space-between;
+  padding:       var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+}
+.dialog-title { font-size: var(--text-xl); font-weight: 800; }
+
+/* Close button — always visible, always functional */
+.dialog-close {
+  width:         36px;
+  height:        36px;
+  border-radius: 50%;
+  background:    var(--bg-card);
+  border:        1px solid var(--border);
+  color:         var(--text-secondary);
+  font-size:     var(--text-lg);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  transition:    all var(--transition-fast);
+  line-height:   1;
+}
+.dialog-close:hover {
+  background:    var(--bg-inset);
+  color:         var(--text-primary);
+  border-color:  var(--border-strong);
+}
+
+.dialog-body { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* Avatar option grid */
+.avatar-options-grid {
+  display:               grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:                   var(--space-3);
+}
+
+.avatar-opt {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            var(--space-1);
+  padding:        var(--space-3);
+  border-radius:  var(--radius-md);
+  background:     var(--bg-card);
+  border:         2px solid transparent;
+  transition:     all var(--transition-fast);
+}
+.avatar-opt:hover { border-color: var(--av-color, var(--accent-robot)); transform: translateY(-2px); }
+.avatar-opt.is-selected {
+  border-color: var(--av-color, var(--accent-robot));
+  background:   color-mix(in srgb, var(--av-color, var(--accent-robot)) 18%, var(--bg-card));
+  box-shadow:   0 0 12px color-mix(in srgb, var(--av-color, var(--accent-robot)) 40%, transparent);
+}
+.av-emoji { font-size: var(--text-2xl); }
+.av-name  { font-size: var(--text-xs); font-weight: 600; color: var(--text-secondary); }
+
+/* Name input */
+.name-input-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.name-input-group label { font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary); }
+
+.name-input {
+  background:    var(--bg-inset);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding:       var(--space-3) var(--space-4);
+  color:         var(--text-primary);
+  font-size:     var(--text-base);
+  width:         100%;
+  transition:    border-color var(--transition-fast);
+}
+.name-input:focus { outline: none; border-color: var(--accent-robot); }
+
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-3); }
+
+
+/* ── 16. Win Overlay ──────────────────────────────────────── */
+.win-overlay {
+  position:    fixed;
+  inset:       0;
+  z-index:     500;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity:     0;
+  transition:  opacity 0.4s ease;
+}
+
+.win-overlay.is-visible {
+  pointer-events: all;
+  opacity:        1;
+}
+
+/* Tier-specific backgrounds */
+.win-overlay--big {
+  background: radial-gradient(ellipse at center, rgba(255,159,67,0.35) 0%, rgba(0,0,0,0.85) 70%);
+}
+.win-overlay--mega {
+  background: radial-gradient(ellipse at center, rgba(6,255,165,0.35) 0%, rgba(0,0,0,0.85) 70%);
+}
+.win-overlay--jackpot {
+  background: radial-gradient(ellipse at center, rgba(255,214,10,0.45) 0%, rgba(0,0,0,0.9) 70%);
+  animation:  jackpot-rainbow 0.5s linear infinite;
+}
+
+.win-overlay-content {
+  text-align: center;
+  display:    flex;
+  flex-direction: column;
+  align-items: center;
+  gap:        var(--space-4);
+}
+
+.win-overlay-label {
+  font-size:      clamp(2rem, 8vw, 5rem);
+  font-weight:    900;
+  letter-spacing: -0.02em;
+  text-shadow:    0 0 30px currentColor;
+  animation:      win-label-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.win-overlay--big     .win-overlay-label { color: var(--accent-orange); }
+.win-overlay--mega    .win-overlay-label { color: var(--accent-green); }
+.win-overlay--jackpot .win-overlay-label { color: var(--accent-gold); }
+
+.win-overlay-amount {
+  font-size:      clamp(2.5rem, 10vw, 7rem);
+  font-weight:    900;
+  font-variant-numeric: tabular-nums;
+  color:          #fff;
+  text-shadow:    0 0 40px rgba(255,255,255,0.6);
+}
+
+.win-overlay-close {
+  padding:       var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  background:    rgba(255,255,255,0.15);
+  border:        1px solid rgba(255,255,255,0.3);
+  color:         #fff;
+  font-size:     var(--text-sm);
+  font-weight:   700;
+  backdrop-filter: blur(4px);
+  cursor:        pointer;
+  transition:    background var(--transition-fast);
+  pointer-events: all;
+}
+.win-overlay-close:hover { background: rgba(255,255,255,0.25); }
+
+
+/* ── 17. Particle Effects ─────────────────────────────────── */
+#effects-layer {
+  position: fixed;
+  inset:    0;
+  pointer-events: none;
+  z-index:  400;
+  overflow: hidden;
+}
+
+.particle {
+  position:   fixed;
+  font-size:  1.4rem;
+  line-height: 1;
+  animation:  particle-fly linear forwards;
+  will-change: transform, opacity;
+}
+
+
+/* ── 18. Robot Mascot ─────────────────────────────────────── */
+.robot-mascot {
+  width:       auto;
+  flex-shrink: 0;
+  position:    relative;
+  display:     flex;
+  flex-direction: column;
+  align-items: center;
+  animation:   robot-idle 3s ease-in-out infinite;
+}
+
+/* Antenna */
+.robot-antenna {
+  width:     4px;
+  height:    16px;
+  background: var(--accent-robot);
+  margin:    0 auto;
+  border-radius: 2px;
+  position:  relative;
+}
+.robot-antenna::after {
+  content:       '';
+  position:      absolute;
+  top:           -6px;
+  left:          50%;
+  transform:     translateX(-50%);
+  width:         10px;
+  height:        10px;
+  border-radius: 50%;
+  background:    var(--accent-green);
+  box-shadow:    0 0 8px var(--accent-green);
+  animation:     antenna-glow 1.5s ease-in-out infinite alternate;
+}
+
+/* Head */
+.robot-head {
+  width:         72px;
+  height:        52px;
+  background:    var(--bg-card);
+  border:        2px solid var(--accent-robot);
+  border-radius: var(--radius-md) var(--radius-md) var(--radius-sm) var(--radius-sm);
+  margin:        0 auto;
+  position:      relative;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  gap:           10px;
+}
+
+.robot-eye {
+  width:         14px;
+  height:        14px;
+  border-radius: 50%;
+  background:    var(--accent-blue);
+  box-shadow:    0 0 8px var(--accent-blue);
+  animation:     eye-blink 4s ease-in-out infinite;
+}
+.robot-eye.right { animation-delay: 0.15s; }
+
+.robot-mouth {
+  position:      absolute;
+  bottom:        10px;
+  left:          50%;
+  transform:     translateX(-50%);
+  width:         24px;
+  height:        6px;
+  background:    var(--accent-robot);
+  border-radius: 0 0 6px 6px;
+}
+
+/* Torso row: left arm | body | right arm */
+.robot-torso {
+  display:     flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap:         3px;
+  margin-top:  2px;
+}
+
+/* Body (centre of torso) */
+.robot-body {
+  width:         58px;
+  height:        46px;
+  background:    var(--bg-card);
+  border:        2px solid var(--accent-robot);
+  border-radius: var(--radius-sm);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  flex-shrink:   0;
+}
+
+.robot-screen {
+  width:         36px;
+  height:        24px;
+  background:    var(--bg-inset);
+  border-radius: 3px;
+  border:        1px solid var(--accent-blue);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  font-size:     var(--text-xs);
+  color:         var(--accent-green);
+  animation:     screen-flicker 5s linear infinite;
+}
+
+/* Arms (flanking the body) */
+.robot-arm {
+  width:            12px;
+  height:           30px;
+  background:       var(--bg-card);
+  border:           2px solid var(--accent-robot);
+  border-radius:    var(--radius-sm);
+  transform-origin: top center;
+  transition:       transform var(--transition-normal);
+  flex-shrink:      0;
+  margin-top:       4px;
+}
+.robot-arm.left  { transform: rotate(-15deg); }
+.robot-arm.right { transform: rotate(15deg); }
+
+/* Legs */
+.robot-legs {
+  display:         flex;
+  justify-content: center;
+  gap:             12px;
+  margin-top:      2px;
+}
+.robot-leg {
+  width:         18px;
+  height:        22px;
+  background:    var(--bg-card);
+  border:        2px solid var(--accent-robot);
+  border-radius: var(--radius-sm) var(--radius-sm) var(--radius-md) var(--radius-md);
+}
+
+/* State variants via data-state attribute */
+.robot-mascot[data-state="excited"] { animation: robot-excited 0.3s ease-in-out infinite; }
+.robot-mascot[data-state="excited"] .robot-eye { background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+.robot-mascot[data-state="excited"] .robot-arm.left  { transform: rotate(-70deg); }
+.robot-mascot[data-state="excited"] .robot-arm.right { transform: rotate(70deg); }
+
+.robot-mascot[data-state="win"] { animation: robot-celebrate 0.5s ease-in-out 3; }
+.robot-mascot[data-state="win"] .robot-eye { background: var(--accent-gold); box-shadow: 0 0 14px var(--accent-gold); }
+.robot-mascot[data-state="win"] .robot-arm.left  { transform: rotate(-120deg); }
+.robot-mascot[data-state="win"] .robot-arm.right { transform: rotate(120deg); }
+.robot-mascot[data-state="win"] .robot-mouth {
+  width: 32px;
+  height: 10px;
+  border-radius: 0 0 10px 10px;
+}
+
+.robot-mascot[data-state="sad"] .robot-eye { background: var(--accent-red); }
+.robot-mascot[data-state="sad"] .robot-arm.left  { transform: rotate(15deg); }
+.robot-mascot[data-state="sad"] .robot-arm.right { transform: rotate(-15deg); }
+.robot-mascot[data-state="sad"] .robot-mouth { border-radius: 10px 10px 0 0; top: auto; bottom: 6px; }
+
+
+/* ── 19. Footer / Controls Bar ────────────────────────────── */
+.footer-controls {
+  display:   flex;
+  align-items: center;
+  gap:       var(--space-5);
+  flex-wrap: wrap;
+  flex:      1;
+}
+
+.footer-group {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+}
+
+.footer-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color:     var(--text-muted);
+  white-space: nowrap;
+}
+
+.volume-slider {
+  -webkit-appearance: none;
+  appearance:         none;
+  width:              80px;
+  height:             4px;
+  background:         var(--border-strong);
+  border-radius:      2px;
+  outline:            none;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance:         none;
+  width:              14px;
+  height:             14px;
+  border-radius:      50%;
+  background:         var(--accent-robot);
+  cursor:             pointer;
+}
+
+.icon-btn {
+  padding:       var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background:    var(--bg-card);
+  border:        1px solid var(--border);
+  color:         var(--text-secondary);
+  font-size:     var(--text-xs);
+  font-weight:   700;
+  transition:    all var(--transition-fast);
+}
+.icon-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.icon-btn[aria-pressed="true"] {
+  background:   var(--bg-inset);
+  border-color: var(--accent-robot);
+  color:        var(--accent-robot);
+}
+
+.footer-credit {
+  margin-left: auto;
+  font-size:   var(--text-xs);
+  color:       var(--text-muted);
+}
+
+
+/* ── 20. Utility ──────────────────────────────────────────── */
+.is-shaking { animation: shake 0.4s ease; }
+
+
+/* ── 21. Animations & Keyframes ───────────────────────────── */
+@keyframes robot-idle {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+@keyframes robot-excited {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-3px) rotate(-2deg); }
+  75%       { transform: translateX(3px)  rotate(2deg); }
+}
+@keyframes robot-celebrate {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%       { transform: translateY(-8px) rotate(-4deg); }
+  75%       { transform: translateY(-4px) rotate(4deg); }
+}
+
+@keyframes eye-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95%            { transform: scaleY(0.1); }
+}
+@keyframes antenna-glow {
+  from { box-shadow: 0 0 4px var(--accent-green); }
+  to   { box-shadow: 0 0 14px var(--accent-green), 0 0 24px var(--accent-green); }
+}
+@keyframes screen-flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96%           { opacity: 0.3; }
+  97%           { opacity: 1; }
+  98%           { opacity: 0.5; }
+}
+
+@keyframes jackpot-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255,214,10,0.2); }
+  50%       { box-shadow: 0 0 24px rgba(255,214,10,0.6); }
+}
+@keyframes jackpot-rainbow {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes light-blink {
+  0%, 45%, 55%, 100% { opacity: 1; }
+  50%                { opacity: 0.15; }
+}
+
+@keyframes cell-blur {
+  0%, 100% { opacity: 0.9; }
+  50%       { opacity: 0.6; }
+}
+@keyframes cell-land {
+  0%   { transform: scale(1.2); opacity: 0.7; }
+  60%  { transform: scale(0.95); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+@keyframes cell-win-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.08); }
+}
+
+@keyframes btn-rotate {
+  from { background-position: 0% 50%; }
+  to   { background-position: 100% 50%; }
+}
+@keyframes idle-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px var(--bg-panel), 0 0 0 6px var(--accent-robot), var(--shadow-md); }
+  50%       { box-shadow: 0 0 0 4px var(--bg-panel), 0 0 0 10px var(--accent-robot), 0 0 30px var(--accent-robot); }
+}
+
+@keyframes win-label-bounce {
+  0%   { transform: scale(0.5) translateY(20px); opacity: 0; }
+  70%  { transform: scale(1.1) translateY(-4px); opacity: 1; }
+  100% { transform: scale(1)   translateY(0);    opacity: 1; }
+}
+
+@keyframes particle-fly {
+  from {
+    transform: translate(0, 0) rotate(0deg);
+    opacity:   1;
+  }
+  to {
+    transform: translate(var(--vx), var(--vy)) rotate(var(--rot));
+    opacity:   0;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+
+/* ── 22. Background Circuit Layer ────────────────────────── */
+#bg-layer {
+  position: fixed;
+  inset:    0;
+  pointer-events: none;
+  z-index:  -1;
+  background:
+    repeating-linear-gradient(0deg,
+      transparent, transparent 48px,
+      rgba(124,131,253,0.025) 48px, rgba(124,131,253,0.025) 49px),
+    repeating-linear-gradient(90deg,
+      transparent, transparent 48px,
+      rgba(124,131,253,0.025) 48px, rgba(124,131,253,0.025) 49px);
+  animation: bg-grid-drift 24s linear infinite;
+}
+@keyframes bg-grid-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 0 48px, 48px 0; }
+}
+
+/* Floating circuit node spawned by JS */
+.bg-node {
+  position: absolute;
+  width:  6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-robot);
+  opacity: 0;
+  animation: node-pulse linear forwards;
+  pointer-events: none;
+}
+.bg-trace {
+  position: absolute;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-robot), transparent);
+  opacity: 0;
+  animation: trace-drift linear forwards;
+  pointer-events: none;
+}
+@keyframes node-pulse {
+  0%   { opacity: 0;    transform: scale(0); }
+  20%  { opacity: 0.12; transform: scale(1); }
+  80%  { opacity: 0.12; }
+  100% { opacity: 0;    transform: scale(0); }
+}
+@keyframes trace-drift {
+  0%   { opacity: 0;    transform: translateX(-20px); }
+  20%  { opacity: 0.08; }
+  80%  { opacity: 0.08; }
+  100% { opacity: 0;    transform: translateX(20px); }
+}
+
+/* ── 23. Speech Bubble ────────────────────────────────────── */
+.machine-top { position: relative; }
+
+.robot-bubble {
+  position:    absolute;
+  top:         -14px;
+  left:        50%;
+  transform:   translateX(-50%) translateY(-100%);
+  background:  var(--bg-card);
+  border:      1.5px solid var(--accent-robot);
+  border-radius: var(--radius-md);
+  padding:     var(--space-2) var(--space-3);
+  font-size:   var(--text-xs);
+  color:       var(--text-primary);
+  line-height: 1.4;
+  white-space: normal;
+  text-align:  center;
+  max-width:   200px;
+  min-width:   120px;
+  pointer-events: auto;
+  cursor:      pointer;
+  opacity:     0;
+  transition:  opacity 0.35s ease;
+  z-index:     20;
+  box-shadow:  0 0 12px rgba(124,131,253,0.25);
+}
+.robot-bubble.is-visible { opacity: 1; }
+.robot-bubble::after {
+  content: '';
+  position: absolute;
+  bottom:   -9px;
+  left:     50%;
+  transform: translateX(-50%);
+  border-left:  9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top:   9px solid var(--accent-robot);
+}
+
+/* ── 24. Extended Cabinet Lights ─────────────────────────── */
+.cabinet-light:nth-child(6)  { background: var(--accent-purple); animation-delay: 1000ms; }
+.cabinet-light:nth-child(7)  { background: var(--accent-robot);  animation-delay: 1200ms; }
+.cabinet-light:nth-child(8)  { background: var(--accent-red);    animation-delay: 1400ms; }
+.cabinet-light:nth-child(9)  { background: var(--accent-gold);   animation-delay: 1600ms; }
+.cabinet-light:nth-child(10) { background: var(--accent-green);  animation-delay: 1800ms; }
+
+.cabinet-lights--bottom {
+  margin-top:    var(--space-3);
+  margin-bottom: 0;
+}
+
+/* Win frenzy — lights go wild */
+.machine-cabinet.win-frenzy .cabinet-light {
+  animation: light-frenzy 0.12s ease-in-out infinite !important;
+}
+@keyframes light-frenzy {
+  0%, 100% { opacity: 1;   transform: scale(1.4); }
+  50%       { opacity: 0.1; transform: scale(0.7); }
+}
+
+/* ── 25. Additional Robot States ──────────────────────────── */
+.robot-mascot[data-state="wave"] .robot-arm.right {
+  animation: arm-wave 0.45s ease-in-out 3 !important;
+}
+@keyframes arm-wave {
+  0%, 100% { transform: rotate(15deg); }
+  50%       { transform: rotate(125deg); }
+}
+
+.robot-mascot[data-state="thinking"] {
+  animation: robot-think 2s ease-in-out infinite;
+}
+.robot-mascot[data-state="thinking"] .robot-arm.right {
+  transform: rotate(70deg);
+}
+.robot-mascot[data-state="thinking"] .robot-eye.left {
+  animation: eye-blink 0.6s ease-in-out 2 !important;
+}
+@keyframes robot-think {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%       { transform: translateY(-3px) rotate(-1.5deg); }
+  75%       { transform: translateY(-3px) rotate(1.5deg); }
+}
+
+.robot-mascot[data-state="impatient"] {
+  animation: robot-impatient 0.18s ease-in-out infinite !important;
+}
+@keyframes robot-impatient {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-2.5px); }
+  75%       { transform: translateX(2.5px); }
+}
+.robot-mascot[data-state="impatient"] .robot-arm.left  { transform: rotate(-30deg); }
+.robot-mascot[data-state="impatient"] .robot-arm.right { transform: rotate(30deg); }
+
+/* ── 26. Reel SVG Symbol Cells ────────────────────────────── */
+.reel-cell svg {
+  width:    72%;
+  height:   72%;
+  display:  block;
+  overflow: visible;
+}
+/* Ensure cell stays flex-centered when innerHTML is SVG */
+.reel-cell { display: flex; align-items: center; justify-content: center; }
+
+/* ── 27. Win Flash Number ─────────────────────────────────── */
+.win-flash-number {
+  position:   fixed;
+  top:        50%;
+  left:       50%;
+  transform:  translate(-50%, -50%) scale(0.5);
+  font-size:  clamp(3rem, 10vw, 7rem);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color:      var(--accent-gold);
+  text-shadow: 0 0 30px var(--accent-gold), 0 0 60px rgba(255,214,10,0.5);
+  pointer-events: none;
+  z-index:    450;
+  animation:  win-num-pop 1.8s cubic-bezier(0.22,1,0.36,1) forwards;
+  white-space: nowrap;
+}
+@keyframes win-num-pop {
+  0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 0; }
+  18%  { transform: translate(-50%,-50%) scale(1.15); opacity: 1; }
+  35%  { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  70%  { transform: translate(-50%,-50%) scale(1.02); opacity: 1; }
+  100% { transform: translate(-50%,-60%) scale(0.85); opacity: 0; }
+}
+
+/* ── 28. Machine Cabinet Glow on Win ──────────────────────── */
+.machine-cabinet.is-winning {
+  box-shadow: var(--shadow-md), 0 0 40px rgba(6,255,165,0.30), inset 0 1px 0 rgba(255,255,255,0.06);
+  border-color: var(--accent-green);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.machine-cabinet.is-jackpot {
+  box-shadow: var(--shadow-md), 0 0 60px rgba(255,214,10,0.50), inset 0 1px 0 rgba(255,255,255,0.06);
+  border-color: var(--accent-gold);
+  animation: cabinet-jackpot 0.4s linear infinite;
+}
+@keyframes cabinet-jackpot {
+  0%,100% { border-color: var(--accent-gold); }
+  50%     { border-color: var(--accent-orange); }
+}
+
+/* ── 29. Responsive — Mobile ──────────────────────────────── */
+@media (max-width: 860px) {
+  :root {
+    --sidebar-w: 180px;
+    --chat-w:    0px;
+  }
+
+  .game-layout {
+    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-areas:
+      'stats machine'
+      'chat  chat';
+  }
+
+  .chat-sidebar {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'machine'
+      'stats'
+      'chat';
+  }
+
+  .header-brand .brand-name { display: none; }
+  .main-nav .tab-btn { padding: var(--space-2); font-size: var(--text-xs); }
+  .spin-btn { --btn-size: 72px; }
+
+  .bet-chips .bet-btn { min-width: 44px; padding: var(--space-1) var(--space-2); }
+
+  .paylines-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 400px) {
+  .avatar-options-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+
+/* ── 30. Accessibility — Reduced Motion ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:   0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration:  0.01ms !important;
+  }
+}
+
+/* Manual override class (matches the button in the footer) */
+.reduced-motion *, .reduced-motion *::before, .reduced-motion *::after {
+  animation-duration:   0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration:  0.01ms !important;
+}
+
+/* Also suppress particles */
+.reduced-motion .particle { display: none !important; }
+.reduced-motion .win-overlay--jackpot { animation: none !important; }
+
+
+/* ── 31. Accessibility — High Contrast ───────────────────── */
+.high-contrast {
+  --bg-page:        #000;
+  --bg-surface:     #0a0a0a;
+  --bg-panel:       #111;
+  --bg-card:        #1a1a1a;
+  --bg-inset:       #050505;
+  --accent-robot:   #fff;
+  --accent-blue:    #00ffff;
+  --accent-green:   #00ff88;
+  --accent-gold:    #ffff00;
+  --accent-orange:  #ff8800;
+  --text-primary:   #ffffff;
+  --text-secondary: #cccccc;
+  --text-muted:     #888888;
+  --border:         rgba(255,255,255,0.4);
+  --border-strong:  rgba(255,255,255,0.8);
+}
+
+.high-contrast .spin-btn,
+.high-contrast .bet-btn.is-active {
+  background:  #fff;
+  color:       #000;
+}
+.high-contrast .reel-cell.is-winner {
+  background: rgba(255,255,0,0.3);
+  border:     3px solid #ff0;
+}
