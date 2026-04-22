@@ -1,10 +1,37 @@
 # Ideas for the AI Slot Machine
 - Fast play:
   - A system where you can immediately stop the machine from spinning, and it will immediately show a result.
-  - Can get more users to play more because it is quicker. (This point does have regulations)
+  - Can get more users to play more because it is quicker. (This point does have legal regulations)
   - Gives the user a feeling of control by letting them stop the machine.
   - Different places do have different regulation, but I think for the purposes of this warm-up, it crosses the line of legality.
-  - Point of Interest: Giving the user a sense of control over the machine
-- Each roll shhould toake no more or less than 3-5 seconds
-  - 
- 
+  - Point of Interest: Giving the user a sense of control over the machine.
+- Each roll shhould toake no more or less than 3-5 seconds:
+  - Helps with attention.
+    - People don't want to wait for a 10 second animation before they get their results.
+    - Its like reading the results of a score, saying "and the winner is" and then 10 seconds later, announcing the winner.
+    - Some suspense is good, but if it takes too long, the focus shifts from the actual result to focus on the length it takes to get the result.
+  - Point of Interest: Keeping user's attention to the slot machine website rather than anything else.
+- Sounds and Visuals:
+  - Noises of other slot machines being used.
+    - Helps simulate actually being in a casino around people.
+    - Gives users a sense of social acceptance.
+      -Gambling is considered a social taboo when outside the casino (unless you're in Nevada), so by giving the users the illusion that other people are playing too, they feel more socially accepted to stay on the site and keep gambling.
+  - The sound and visuals of winning big:
+    - A visual "YOU WIN!" pops up briefly.
+    - When you win, you are able to see your money counter go up.
+    - When the visuals are playing, add the sound of dropping coins in a steel container.
+    - All of these can increase user playtimne by giving them stimuli to associate with a given action.
+      - Even if user's don't care about winning the money, they can still have an incentive to use the slot machine based on wanting to get that dopamine rush from the sounds and visuals of winning.
+  - Point of Interest: Sounds and Visuals can be a huge factor in keeping users playing slots.
+- Money incentives to keep playing:
+  - Paylines, Bonus Rounds, and a Pot System:
+    - All do the same thing, just function differntly
+    - Paylines offer an incentive to gamble more by giving the user more bases to cover regarding the positions of the different symbols
+    - Bonus Rounds is where you land on a certain line and for the next few spins, they are free and will payout based on the standard betting the machine starts out with
+    - Pot Systems offer an incentinve to gamble more because 1. Its more money to gain 2. You see the pot grow as you play more 3. A bit of the sunk cost fallacy falls here ("I've contributed so much to the pot! It only feels right for it to be mine!")
+    - All of these help get users to gamble more by offering incentives that can influence different people
+  - Pity System:
+    - "You were so close to winning it big and because of that, here is some money. It may not be the big prize, but at least its something right?"
+      - Helps distract user from the potential win they lost and helps them focus on what they won in lieu of that.
+    - More money to spend is more money for the slot machine to make
+  - Point of Interest: Finding different ways we can keep incentivizing people to play longer.
