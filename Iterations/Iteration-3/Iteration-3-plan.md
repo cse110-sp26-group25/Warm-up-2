@@ -1,4 +1,4 @@
-# Iteration 2
+# Iteration 3
 
 ### Goals:
 - Improve the slot machine based on improvement notes in the Iteration 2 review file as well as additional additions to the AI plan file. Focus is on improving "additional features" and graphics intended to entertain the player rather than core functionality. 
