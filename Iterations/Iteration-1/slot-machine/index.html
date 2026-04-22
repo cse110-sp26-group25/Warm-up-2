@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+        content="NEURAL MELTDOWN — The browser slot machine where an AI predicts your losses and is usually wrong. Features jackpots, achievements, quests, leaderboard, and an identity crisis.">
+  <meta name="theme-color" content="#080d1a">
+
+  <title>NEURAL MELTDOWN — AI Slot Machine</title>
+
+  <!-- Stylesheets (load order: base → animations → accessibility overrides) -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/accessibility.css">
+</head>
+
+<body>
+
+  <!-- ── Skip Navigation Link (keyboard & screen-reader users) ──────────── -->
+  <a href="#main-game" class="skip-link">Skip to game</a>
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       HEADER — Title, Jackpot, and "Provably-Fair" seed commitment
+       ══════════════════════════════════════════════════════════════════════ -->
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+
+      <!-- Logo / Title -->
+      <div class="logo-area">
+        <h1 class="game-title" aria-label="Neural Meltdown — AI Slot Machine">
+          <span class="title-neural" aria-hidden="true">NEURAL</span>
+          <span class="title-meltdown" aria-hidden="true">MELTDOWN</span>
+        </h1>
+        <p class="game-subtitle">
+          The AI That Predicts Your Losses. (Success Rate: Questionable.)
+        </p>
+      </div>
+
+      <!-- Growing jackpot counter -->
+      <div class="jackpot-display"
+           aria-live="polite"
+           aria-label="Current progressive jackpot amount">
+        <span class="jackpot-label" aria-hidden="true">★ JACKPOT ★</span>
+        <span class="jackpot-amount" id="jackpot-amount">5,000</span>
+        <span class="sr-only">credits</span>
+      </div>
+
+    </div>
+  </header>
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       MAIN GAME
+       ══════════════════════════════════════════════════════════════════════ -->
+  <main id="main-game" class="main-content" role="main">
+
+
+    <!-- ── AI Commentary Bar ──────────────────────────────────────────────
+         Rotates through humorous AI-bashing taunts. Players can click
+         "👍 Agree" for the AI Critic achievement.
+         aria-live="polite" so screen readers announce changes between spins.
+    ──────────────────────────────────────────────────────────────────────── -->
+    <section class="ai-taunt-bar"
+             aria-label="AI commentary"
+             aria-live="polite">
+      <div class="taunt-content" id="ai-taunt">
+        <span class="taunt-icon" aria-hidden="true">🤖</span>
+        <span class="taunt-text" id="taunt-text">
+          Initialising neural network… Prediction: you will lose. Confidence: 99.7%. (My training data had no edge cases.)
+        </span>
+      </div>
+      <button id="taunt-agree"
+              class="icon-btn"
+              aria-label="Agree with this AI commentary"
+              title="Click to agree — counts towards AI Critic achievement">
+        👍 Agree
+      </button>
+    </section>
+
+
+    <!-- ── Slot Machine Section ──────────────────────────────────────────── -->
+    <section class="slot-machine-section"
+             aria-label="Slot machine">
+
+      <!-- Win Amount Display (hidden when no win; aria-live announces wins) -->
+      <div class="win-display"
+           id="win-display"
+           role="status"
+           aria-live="assertive"
+           aria-atomic="true"
+           aria-label="Win display">
+        <span class="win-label" aria-hidden="true">WIN</span>
+        <span class="win-amount" id="win-amount">0</span>
+      </div>
+
+      <!-- The Machine Cabinet -->
+      <div class="machine-cabinet" role="presentation">
+
+        <!-- Decorative cabinet lights (aria-hidden: purely decorative) -->
+        <div class="cabinet-lights" aria-hidden="true">
+          <span class="light"></span>
+          <span class="light"></span>
+          <span class="light"></span>
+          <span class="light"></span>
+          <span class="light"></span>
+        </div>
+
+        <!-- Reels Window -->
+        <div class="reels-window"
+             aria-label="Three spinning reels. The centre row is the payline.">
+
+          <!-- Payline indicator (decorative) -->
+          <div class="payline" aria-hidden="true" title="Payline — match all three centre symbols to win"></div>
+
+          <!-- Reel 1 -->
+          <div class="reel"
+               id="reel-0"
+               role="img"
+               aria-label="Reel one: 💾">
+            <div class="reel-symbols" aria-hidden="true">
+              <div class="symbol top-symbol"    id="reel-0-top">📉</div>
+              <div class="symbol center-symbol" id="reel-0-center">💾</div>
+              <div class="symbol bottom-symbol" id="reel-0-bottom">⚠️</div>
+            </div>
+          </div>
+
+          <!-- Reel 2 -->
+          <div class="reel"
+               id="reel-1"
+               role="img"
+               aria-label="Reel two: 💻">
+            <div class="reel-symbols" aria-hidden="true">
+              <div class="symbol top-symbol"    id="reel-1-top">🧠</div>
+              <div class="symbol center-symbol" id="reel-1-center">💻</div>
+              <div class="symbol bottom-symbol" id="reel-1-bottom">⚡</div>
+            </div>
+          </div>
+
+          <!-- Reel 3 -->
+          <div class="reel"
+               id="reel-2"
+               role="img"
+               aria-label="Reel three: ⚠️">
+            <div class="reel-symbols" aria-hidden="true">
+              <div class="symbol top-symbol"    id="reel-2-top">🤖</div>
+              <div class="symbol center-symbol" id="reel-2-center">⚠️</div>
+              <div class="symbol bottom-symbol" id="reel-2-bottom">💎</div>
+            </div>
+          </div>
+
+        </div><!-- /reels-window -->
+
+      </div><!-- /machine-cabinet -->
+
+      <!-- Provably-fair seed commitment (shown during each spin) -->
+      <p class="commitment-display"
+         aria-label="RNG seed commitment hash for provable fairness">
+        Seed: <span id="commitment-hash" title="SHA-256 hash committed before spin result">—</span>
+      </p>
+
+    </section><!-- /slot-machine-section -->
+
+
+    <!-- ── Controls Section ────────────────────────────────────────────────
+         Bet selector, the central spin button, and the balance counter.
+         Bet buttons use role="radio" to communicate state to screen readers.
+    ──────────────────────────────────────────────────────────────────────── -->
+    <section class="controls-section" aria-label="Game controls">
+
+      <!-- Bet Selection -->
+      <div class="bet-controls">
+        <span class="bet-label" id="bet-group-label">Bet per spin</span>
+        <div class="bet-options"
+             role="radiogroup"
+             aria-labelledby="bet-group-label">
+
+          <button class="bet-btn active"
+                  id="bet-low"
+                  data-bet="low"
+                  role="radio"
+                  aria-checked="true"
+                  aria-label="Low bet: 10 credits per spin (selected)">
+            <span>LOW BET</span>
+            <span class="bet-amount-display">10</span>
+          </button>
+
+          <button class="bet-btn"
+                  id="bet-high"
+                  data-bet="high"
+                  role="radio"
+                  aria-checked="false"
+                  aria-label="High bet: 100 credits per spin">
+            <span>HIGH BET</span>
+            <span class="bet-amount-display">100</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- THE BIG RED SPIN BUTTON
+           Primary game interaction. Activates via click, touch, Space, or Enter.
+           Keyboard shortcut noted in aria-label AND in subtitle visible text.
+      -->
+      <button class="spin-button"
+              id="spin-btn"
+              aria-label="Spin the reels. Press Spacebar or Enter as shortcut."
+              title="Click or press Spacebar / Enter to spin">
+        <span class="spin-btn-label">SPIN</span>
+        <span class="spin-btn-sub">SPACE / ENTER</span>
+      </button>
+
+      <!-- Balance display — shows credits won, not net profit/loss -->
+      <div class="balance-display"
+           aria-label="Your current credit balance">
+        <span class="balance-label">Credits</span>
+        <span class="balance-amount"
+              id="balance-display"
+              aria-live="polite"
+              aria-atomic="true">1,000</span>
+      </div>
+
+    </section><!-- /controls-section -->
+
+
+    <!-- ── Session Statistics Bar ─────────────────────────────────────────
+         Shows per-session counters. Money displayed is "won" only,
+         never net loss, per project specification.
+    ──────────────────────────────────────────────────────────────────────── -->
+    <section class="stats-bar"
+             aria-label="Session statistics">
+
+      <div class="stat-item">
+        <span class="stat-label">Spins</span>
+        <span class="stat-value" id="stat-spins" aria-live="polite">0</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-label">Won</span>
+        <span class="stat-value" id="stat-won" aria-live="polite">0</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-label">Win Streak</span>
+        <span class="stat-value" id="stat-streak" aria-live="polite">0</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-label">Time</span>
+        <span class="stat-value" id="stat-time" aria-live="polite">0:00</span>
+      </div>
+
+    </section><!-- /stats-bar -->
+
+
+  </main><!-- /main-content -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SIDE PANELS — Chat, Achievements, Leaderboard, Quests
+       Uses tabs (role="tablist") for panel navigation.
+       ══════════════════════════════════════════════════════════════════════ -->
+  <aside class="side-panels" aria-label="Social features and extras">
+
+    <!-- Tab Navigation -->
+    <nav class="panel-tabs"
+         role="tablist"
+         aria-label="Side panel navigation">
+
+      <button class="panel-tab active"
+              id="tab-chat"
+              role="tab"
+              aria-selected="true"
+              aria-controls="panel-chat"
+              tabindex="0">
+        💬 Chat
+      </button>
+
+      <button class="panel-tab"
+              id="tab-achievements"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-achievements"
+              tabindex="-1">
+        🏆 Awards
+      </button>
+
+      <button class="panel-tab"
+              id="tab-leaderboard"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-leaderboard"
+              tabindex="-1">
+        📊 Ranks
+      </button>
+
+      <button class="panel-tab"
+              id="tab-quests"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-quests"
+              tabindex="-1">
+        ⚔️ Quests
+      </button>
+
+    </nav>
+
+    <!-- Chat Panel -->
+    <div class="panel-content active"
+         id="panel-chat"
+         role="tabpanel"
+         aria-labelledby="tab-chat">
+
+      <div class="chat-messages"
+           id="chat-messages"
+           aria-live="polite"
+           aria-label="Chat messages"
+           aria-relevant="additions">
+        <!-- Populated by chat.js on init() -->
+      </div>
+
+      <div class="chat-input-area">
+        <label for="chat-input" class="sr-only">Type a chat message</label>
+        <input type="text"
+               id="chat-input"
+               class="chat-input"
+               placeholder="Say something... (or don't)"
+               aria-label="Chat message input"
+               autocomplete="off"
+               maxlength="200">
+        <button id="chat-send"
+                class="chat-send-btn"
+                aria-label="Send chat message">
+          Send
+        </button>
+      </div>
+
+    </div><!-- /panel-chat -->
+
+    <!-- Achievements Panel -->
+    <div class="panel-content"
+         id="panel-achievements"
+         role="tabpanel"
+         aria-labelledby="tab-achievements"
+         hidden>
+
+      <div class="achievements-list"
+           id="achievements-list"
+           aria-label="Achievements list">
+        <!-- Populated by achievements.js -->
+      </div>
+
+    </div><!-- /panel-achievements -->
+
+    <!-- Leaderboard Panel -->
+    <div class="panel-content"
+         id="panel-leaderboard"
+         role="tabpanel"
+         aria-labelledby="tab-leaderboard"
+         hidden>
+
+      <div class="leaderboard-list"
+           id="leaderboard-list"
+           aria-label="High score leaderboard">
+        <!-- Populated by stats.js -->
+      </div>
+
+    </div><!-- /panel-leaderboard -->
+
+    <!-- Quests Panel -->
+    <div class="panel-content"
+         id="panel-quests"
+         role="tabpanel"
+         aria-labelledby="tab-quests"
+         hidden>
+
+      <div class="quests-list"
+           id="quests-list"
+           aria-label="Side quests progress">
+        <!-- Populated by quests.js -->
+      </div>
+
+    </div><!-- /panel-quests -->
+
+  </aside><!-- /side-panels -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SETTINGS FOOTER — Audio controls and accessibility toggles
+       ══════════════════════════════════════════════════════════════════════ -->
+  <footer class="settings-footer" role="contentinfo">
+    <div class="settings-inner">
+
+      <!-- Audio Controls -->
+      <div class="audio-controls"
+           role="group"
+           aria-label="Audio settings">
+
+        <button id="toggle-music"
+                class="icon-btn"
+                aria-label="Toggle background music on or off"
+                aria-pressed="true"
+                title="Toggle background music">
+          🎵
+        </button>
+
+        <label class="slider-label" for="volume-slider">Vol</label>
+        <input type="range"
+               id="volume-slider"
+               class="volume-slider"
+               min="0"
+               max="100"
+               value="70"
+               aria-label="Master volume"
+               aria-valuemin="0"
+               aria-valuemax="100"
+               aria-valuenow="70">
+
+      </div>
+
+      <!-- Accessibility Controls -->
+      <div class="accessibility-controls"
+           role="group"
+           aria-label="Accessibility options">
+
+        <button id="toggle-epilepsy"
+                class="icon-btn"
+                aria-label="Toggle epilepsy safe mode — disables flashing effects and rapid animations"
+                aria-pressed="false"
+                title="Epilepsy safe mode: removes flashes, particles and rapid animations">
+          ⚡ Safe
+        </button>
+
+        <button id="toggle-reduced-motion"
+                class="icon-btn"
+                aria-label="Toggle reduced motion — minimises all animations"
+                aria-pressed="false"
+                title="Reduced motion: respects your OS accessibility setting">
+          🔄 Motion
+        </button>
+
+        <button id="toggle-high-contrast"
+                class="icon-btn"
+                aria-label="Toggle high contrast mode for improved readability"
+                aria-pressed="false"
+                title="High contrast mode: maximises text and element contrast">
+          🔲 Contrast
+        </button>
+
+        <button id="open-avatar"
+                class="icon-btn"
+                aria-label="Open avatar creator to personalise your profile"
+                title="Create your avatar">
+          👤 Avatar
+        </button>
+
+      </div>
+
+    </div>
+  </footer><!-- /settings-footer -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       AVATAR MODAL
+       role="dialog" with aria-modal="true" traps focus inside when open.
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay"
+       id="avatar-modal"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="avatar-modal-title"
+       hidden>
+
+    <div class="modal-content">
+
+      <header class="modal-header">
+        <h2 id="avatar-modal-title">Create Your Avatar</h2>
+        <button class="modal-close"
+                aria-label="Close avatar creator"
+                title="Close">
+          &times;
+        </button>
+      </header>
+
+      <div class="modal-body"
+           id="avatar-builder"
+           aria-label="Avatar customisation options">
+        <!-- Populated dynamically by avatar.js -->
+      </div>
+
+    </div>
+
+  </div><!-- /avatar-modal -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       LIVE REGIONS AND EFFECT LAYERS
+       ══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- Toast notification container (achievement, quest, warning) -->
+  <div class="toast-container"
+       id="toast-container"
+       role="region"
+       aria-label="Game notifications"
+       aria-live="assertive"
+       aria-atomic="false">
+    <!-- Toasts appended here by ui.js -->
+  </div>
+
+  <!-- Visual particle and flash effects layer (aria-hidden: purely decorative) -->
+  <div class="effects-layer"
+       id="effects-layer"
+       aria-hidden="true">
+    <!-- Coin particles and screen flashes appended here by ui.js -->
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SCRIPTS
+       Load order is significant: config → rng → security → audio →
+       data modules → game logic → ui → main entry point.
+       All scripts are deferred by placement at end of <body>.
+       ══════════════════════════════════════════════════════════════════════ -->
+  <script src="js/config.js"></script>
+  <script src="js/rng.js"></script>
+  <script src="js/security.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/achievements.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/quests.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/avatar.js"></script>
+  <script src="js/gameLogic.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
