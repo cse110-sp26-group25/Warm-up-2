@@ -29,17 +29,27 @@
 9. There is no words popping up upon winning.
     
 #### Back end issues
-1. Accessibility js fil
-
+1. A lot of game logic is still hard coded.
+2. HTML file is still overusing <div> Better tags would be nice.
+3. There is lesser files ( might not inherently be a bad thing)
+   
 ### Upsides
 
 #### Good front end
-1. The webage succcessfully allows you to pick your avatar and name.
-2. 
+1. Allowd user to personalize avatar and name.
+2. The slot machine is bigger.
+3. Chat box is physically functional.
+4. Accessibility is good with multiple easy ways to play.
+5. Color change is working.
+6. Clear user directions on how to play.
+7. Overall smooth UX
 
 #### Good back end
-1. Code is 
-2. 
+1. CSS file has an excellent summary and headers.
+2. var is not overused in the JS file
+3. Good description of sections and organised work flow.
+    
+
 
 ## Notes for next iteration:
 1. Avoid use of emojis as icons for slot machine
