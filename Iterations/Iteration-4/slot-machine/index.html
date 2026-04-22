@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="RoboSlots v2 — a browser-based 3×5 slot machine with a robot theme, multiple paylines, leaderboard, and accessible controls.">
+  <meta name="theme-color" content="#150d08">
+
+  <title>RoboSlots v2 — Robot Slot Machine</title>
+
+  <!--
+    Favicon: inline SVG data URI (robot face).
+    No external file dependency needed.
+  -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='11' width='24' height='17' rx='4' fill='%237c83fd'/%3E%3Crect x='8' y='15' width='6' height='5' rx='2' fill='%2300b4d8'/%3E%3Crect x='18' y='15' width='6' height='5' rx='2' fill='%2300b4d8'/%3E%3Crect x='11' y='22' width='10' height='3' rx='1.5' fill='%23fff' opacity='.7'/%3E%3Crect x='14' y='6' width='4' height='5' rx='1' fill='%237c83fd'/%3E%3Ccircle cx='16' cy='5' r='3' fill='%2306ffa5'/%3E%3C/svg%3E">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- Ambient background layer — circuit grid pattern, aria-hidden -->
+  <div id="bg-layer" aria-hidden="true"></div>
+
+  <!-- Skip navigation for keyboard / screen-reader users -->
+  <a href="#main-game" class="skip-link">Skip to game</a>
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       HEADER — brand, primary tab navigation, player badge
+       ══════════════════════════════════════════════════════════════════════ -->
+  <header class="app-header" role="banner">
+
+    <!-- Brand -->
+    <a href="#" class="header-brand" aria-label="RoboSlots home">
+      <span class="brand-logo" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <line x1="16" y1="2" x2="16" y2="7" stroke="#7c83fd" stroke-width="2"/>
+          <circle cx="16" cy="1.5" r="2.5" fill="#06ffa5"/>
+          <rect x="4" y="7" width="24" height="15" rx="4" fill="#1a2545" stroke="#7c83fd" stroke-width="1.5"/>
+          <rect x="8" y="11" width="5" height="5" rx="2" fill="#00b4d8"/>
+          <rect x="19" y="11" width="5" height="5" rx="2" fill="#00b4d8"/>
+          <rect x="9" y="18" width="14" height="2" rx="1" fill="#7c83fd"/>
+          <rect x="6" y="24" width="20" height="6" rx="3" fill="#1a2545" stroke="#7c83fd" stroke-width="1.5"/>
+        </svg>
+      </span>
+      <span class="brand-name">RoboSlots</span>
+    </a>
+
+    <!-- Primary tab navigation -->
+    <nav class="main-nav" aria-label="Section navigation" role="tablist">
+
+      <button class="tab-btn is-active"
+              data-tab="game"
+              role="tab"
+              aria-selected="true"
+              aria-controls="tab-game"
+              tabindex="0">
+        🎰 Game
+      </button>
+
+      <button class="tab-btn"
+              data-tab="leaderboard"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-leaderboard"
+              tabindex="-1">
+        🏆 Rankings
+      </button>
+
+      <button class="tab-btn"
+              data-tab="help"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-help"
+              tabindex="-1">
+        📖 How to Play
+      </button>
+
+    </nav>
+
+    <!-- Player identity + avatar launcher -->
+    <div class="header-right">
+
+      <!-- Clicking this button opens the avatar dialog -->
+      <button class="player-badge"
+              id="avatar-open-btn"
+              aria-label="Open avatar selector and set your player name"
+              title="Customize your avatar and name">
+
+        <span class="player-av"
+              id="avatar-display"
+              aria-hidden="true"
+              style="--av-color: #7c83fd">
+          <!-- Default person icon — replaced by JS with selected avatar SVG -->
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="16" cy="10" r="6" fill="currentColor" opacity="0.9"/>
+            <path d="M5 28 Q5 20 16 20 Q27 20 27 28Z" fill="currentColor" opacity="0.9"/>
+          </svg>
+        </span>
+
+        <span class="player-name" id="player-name-display">Player</span>
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       MAIN CONTENT
+       ══════════════════════════════════════════════════════════════════════ -->
+  <main class="app-main" id="main-game">
+
+
+    <!-- ── TAB 1: GAME ──────────────────────────────────────────────────── -->
+    <section id="tab-game"
+             class="tab-panel is-active"
+             role="tabpanel"
+             aria-labelledby="">
+
+      <div class="game-layout">
+
+        <!-- ── Stats Sidebar ────────────────────────────────────────────── -->
+        <aside class="stats-sidebar" aria-label="Session statistics">
+
+          <!-- Balance -->
+          <div class="info-box info-box--balance">
+            <span class="info-label">Credits</span>
+            <span class="info-value"
+                  id="balance-amount"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  aria-label="Current credit balance">1,000</span>
+          </div>
+
+          <!-- Progressive Jackpot -->
+          <div class="info-box info-box--jackpot">
+            <span class="info-label">★ Jackpot ★</span>
+            <span class="info-value"
+                  id="jackpot-amount"
+                  aria-live="polite"
+                  aria-label="Current jackpot">5,000</span>
+            <span style="font-size:0.7rem;color:var(--text-muted);margin-top:2px">
+              5 🤖 on middle row
+            </span>
+          </div>
+
+          <!-- Session stats -->
+          <div class="info-box">
+            <span class="info-label">This Session</span>
+            <div class="stat-row">
+              <span class="stat-key">Spins</span>
+              <span class="stat-val" id="stat-spins" aria-live="polite">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Total Won</span>
+              <span class="stat-val" id="stat-won"   aria-live="polite">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Biggest Win</span>
+              <span class="stat-val" id="stat-biggest" aria-live="polite">0</span>
+            </div>
+          </div>
+
+          <!-- Session controls -->
+          <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:auto">
+            <button class="btn btn--primary" id="save-score-btn" type="button"
+                    aria-label="Save your current session score to the leaderboard">
+              💾 Save Score
+            </button>
+            <button class="btn btn--danger" id="reset-btn" type="button"
+                    aria-label="Reset session balance back to 1 000 credits">
+              🔄 Reset Session
+            </button>
+          </div>
+
+        </aside><!-- /stats-sidebar -->
+
+
+        <!-- ── Machine Center ────────────────────────────────────────────── -->
+        <section class="machine-section" aria-label="Slot machine">
+
+          <!-- Robot mascot + jackpot headline row -->
+          <div class="machine-top">
+
+            <!--
+              CSS-art robot mascot.
+              aria-hidden: purely decorative — state announced via live regions.
+              data-state is toggled by ui.js: idle | excited | win | sad
+            -->
+            <!-- Speech bubble — shown during idle interactions -->
+            <div class="robot-bubble" id="robot-bubble" aria-hidden="true">
+              <span id="robot-bubble-text"></span>
+            </div>
+
+            <div class="robot-mascot"
+                 id="robot-mascot"
+                 aria-hidden="true"
+                 data-state="idle">
+
+              <div class="robot-antenna"></div>
+
+              <div class="robot-head">
+                <div class="robot-eye left"  aria-hidden="true"></div>
+                <div class="robot-eye right" aria-hidden="true"></div>
+                <div class="robot-mouth"     aria-hidden="true"></div>
+              </div>
+
+              <!--
+                Torso row: left arm | body | right arm
+                Flex-row layout keeps arms visually beside the body.
+              -->
+              <div class="robot-torso" aria-hidden="true">
+                <div class="robot-arm left"></div>
+                <div class="robot-body">
+                  <div class="robot-screen" id="robot-screen">&gt;_</div>
+                </div>
+                <div class="robot-arm right"></div>
+              </div>
+
+              <div class="robot-legs" aria-hidden="true">
+                <div class="robot-leg left"></div>
+                <div class="robot-leg right"></div>
+              </div>
+
+            </div><!-- /robot-mascot -->
+
+          </div><!-- /machine-top -->
+
+
+          <!-- Slot machine cabinet -->
+          <div class="machine-cabinet" role="presentation">
+
+            <!-- Decorative blinker lights — top row -->
+            <div class="cabinet-lights" aria-hidden="true">
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+            </div>
+
+            <!--
+              Reels window — 3 rows × 5 columns.
+              The actual cells are built by ui.js buildReelsGrid() so the
+              grid size can change without editing the HTML.
+              aria-label describes the grid for screen readers;
+              aria-live will announce spin results.
+            -->
+            <div class="reels-window">
+              <div id="reels-grid"
+                   aria-label="Slot machine reels, 3 rows by 5 columns"
+                   aria-live="polite"
+                   aria-atomic="true"
+                   role="img">
+              </div>
+            </div>
+
+            <!-- Decorative blinker lights — bottom row -->
+            <div class="cabinet-lights cabinet-lights--bottom" aria-hidden="true">
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+              <span class="cabinet-light"></span>
+            </div>
+
+          </div><!-- /machine-cabinet -->
+
+
+          <!-- Spin button + decorative slot lever -->
+          <div class="spin-controls">
+
+            <!-- Decorative slot machine lever arm — purely visual, pulls when you spin -->
+            <div class="slot-lever" id="slot-lever" aria-hidden="true">
+              <div class="lever-shaft">
+                <div class="lever-knob"></div>
+              </div>
+              <div class="lever-gate"></div>
+            </div>
+
+            <button class="spin-btn"
+                    id="spin-btn"
+                    type="button"
+                    aria-label="Spin the reels. Keyboard shortcut: Space or Enter">
+
+              <span class="spin-btn-inner" aria-hidden="true">
+                <span class="spin-btn-label">SPIN</span>
+                <span class="spin-btn-sub">SPACE / ↵</span>
+              </span>
+
+            </button>
+
+          </div>
+
+
+          <!-- Bet selection -->
+          <section class="bet-section" aria-label="Bet amount selection">
+
+            <div class="bet-label-row">
+              <span>Bet per spin:</span>
+              <span class="current-bet-value"
+                    id="current-bet"
+                    aria-live="polite"
+                    aria-label="Current bet">10</span>
+              <span>credits</span>
+            </div>
+
+            <!-- Seven bet size options, styled as casino chips -->
+            <div class="bet-chips"
+                 role="radiogroup"
+                 aria-label="Select bet amount">
+
+              <button class="bet-btn"
+                      data-bet="5"
+                      role="radio"
+                      aria-checked="false"
+                      aria-label="Bet 5 credits">5</button>
+
+              <button class="bet-btn is-active"
+                      data-bet="10"
+                      role="radio"
+                      aria-checked="true"
+                      aria-label="Bet 10 credits">10</button>
+
+              <button class="bet-btn"
+                      data-bet="25"
+                      role="radio"
+                      aria-checked="false"
+                      aria-label="Bet 25 credits">25</button>
+
+              <button class="bet-btn"
+                      data-bet="50"
+                      role="radio"
+                      aria-checked="false"
+                      aria-label="Bet 50 credits">50</button>
+
+              <button class="bet-btn"
+                      data-bet="100"
+                      role="radio"
+                      aria-checked="false"
+                      aria-label="Bet 100 credits">100</button>
+
+              <button class="bet-btn"
+                      data-bet="250"
+                      role="radio"
+                      aria-checked="false"
+                      aria-label="Bet 250 credits">250</button>
+
+              <button class="bet-btn"
+                      data-bet="500"
+                      role="radio"
+                      aria-checked="false"
+                      aria-label="Bet 500 credits">500</button>
+
+            </div>
+
+          </section><!-- /bet-section -->
+
+        </section><!-- /machine-section -->
+
+
+        <!-- ── Chat Sidebar ──────────────────────────────────────────────── -->
+        <aside class="chat-sidebar" aria-label="Game log and chat">
+
+          <header class="chat-header">
+            <span aria-hidden="true">💬</span>
+            <span>Game Log</span>
+          </header>
+
+          <!--
+            Fixed-height scrollable container.
+            aria-live="polite" so screen readers announce new messages.
+            50-message ring buffer is maintained by ui.js.
+          -->
+          <div class="chat-messages"
+               id="chat-messages"
+               role="log"
+               aria-live="polite"
+               aria-relevant="additions"
+               aria-label="Game messages">
+          </div>
+
+          <div class="chat-input-area">
+            <label for="chat-input" class="sr-only">Chat message</label>
+            <input type="text"
+                   id="chat-input"
+                   class="chat-input"
+                   placeholder="Say something…"
+                   maxlength="200"
+                   autocomplete="off"
+                   aria-label="Type a chat message">
+            <button type="button"
+                    id="chat-send"
+                    class="chat-send-btn"
+                    aria-label="Send message">
+              Send
+            </button>
+          </div>
+
+        </aside><!-- /chat-sidebar -->
+
+      </div><!-- /game-layout -->
+
+    </section><!-- /tab-game -->
+
+
+    <!-- ── TAB 2: RANKINGS / LEADERBOARD ────────────────────────────────── -->
+    <section id="tab-leaderboard"
+             class="tab-panel"
+             role="tabpanel"
+             aria-label="Rankings leaderboard"
+             hidden>
+
+      <div class="lb-header">
+
+        <h2 class="lb-title">🏆 Rankings</h2>
+
+        <div class="lb-actions">
+          <button type="button"
+                  id="save-score-btn-lb"
+                  class="btn btn--primary"
+                  aria-label="Save your current session score to the leaderboard"
+                  onclick="GameLogic.saveScore(); UI.init();">
+            💾 Save My Score
+          </button>
+        </div>
+
+      </div>
+
+      <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1.5rem">
+        Sorted by total credits won. Scores persist across sessions via localStorage.
+      </p>
+
+      <table class="leaderboard-table" aria-label="Top scores">
+        <thead>
+          <tr>
+            <th scope="col" style="width:56px">Rank</th>
+            <th scope="col">Player</th>
+            <th scope="col" style="text-align:right">Total Won</th>
+            <th scope="col" style="text-align:right">Biggest Win</th>
+            <th scope="col">Details</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body">
+          <!-- Populated by ui.js _renderLeaderboard() -->
+          <tr>
+            <td colspan="5" class="lb-empty">
+              Loading scores…
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </section><!-- /tab-leaderboard -->
+
+
+    <!-- ── TAB 3: HOW TO PLAY ────────────────────────────────────────────── -->
+    <section id="tab-help"
+             class="tab-panel"
+             role="tabpanel"
+             aria-label="How to play"
+             hidden>
+
+      <h2 class="help-title">📖 How to Play</h2>
+
+      <!-- Basics -->
+      <div class="paytable-card" style="padding:var(--space-5);margin-bottom:var(--space-5)">
+        <h3 style="margin-bottom:0.75rem;font-size:var(--text-lg)">Basics</h3>
+        <ul style="list-style:disc;padding-left:1.5rem;display:flex;flex-direction:column;gap:0.5rem;color:var(--text-secondary);font-size:0.9rem">
+          <li>The machine has <strong style="color:var(--text-primary)">3 rows and 5 columns</strong> — 15 symbols visible per spin.</li>
+          <li>There are <strong style="color:var(--text-primary)">9 paylines</strong>. A win occurs when 3 or more identical symbols appear consecutively from the left on any payline.</li>
+          <li>Select a bet (5–500 credits) using the chip buttons, then click <strong style="color:var(--text-primary)">SPIN</strong> or press <kbd>Space</kbd> / <kbd>Enter</kbd>.</li>
+          <li>The <strong style="color:var(--accent-robot)">🤖 Robot</strong> is a <strong style="color:var(--text-primary)">Wild</strong> — it substitutes for any non-wild symbol.</li>
+          <li>Land <strong style="color:var(--accent-gold)">five Robots on the middle row</strong> to win the progressive jackpot.</li>
+          <li>Win amounts are the payout multiplier × your bet. Multiple winning paylines add together.</li>
+        </ul>
+      </div>
+
+      <!-- Paytable -->
+      <div class="paytable-card">
+        <table aria-label="Payout table">
+          <thead>
+            <tr>
+              <th scope="col">Symbol</th>
+              <th scope="col">Name</th>
+              <th scope="col" style="text-align:right">3 Match</th>
+              <th scope="col" style="text-align:right">4 Match</th>
+              <th scope="col" style="text-align:right">5 Match</th>
+            </tr>
+          </thead>
+          <tbody id="paytable-body">
+            <!-- Populated by ui.js _renderPaytable() -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paylines -->
+      <h3 style="margin:var(--space-5) 0 var(--space-3);font-size:var(--text-lg)">Payline Patterns</h3>
+      <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:var(--space-4)">
+        Coloured cells show which positions are checked per payline.
+      </p>
+      <div id="paylines-grid" class="paylines-grid">
+        <!-- Populated by ui.js _renderPaytable() -->
+      </div>
+
+    </section><!-- /tab-help -->
+
+
+  </main><!-- /app-main -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       FOOTER — volume control and accessibility toggles
+       ══════════════════════════════════════════════════════════════════════ -->
+  <footer class="app-footer" role="contentinfo">
+
+    <div class="footer-controls">
+
+      <!-- Volume -->
+      <div class="footer-group" role="group" aria-label="Volume control">
+        <span class="footer-label" aria-hidden="true">🔊</span>
+        <label for="volume-slider" class="sr-only">Master volume</label>
+        <input type="range"
+               id="volume-slider"
+               class="volume-slider"
+               min="0"
+               max="100"
+               value="70"
+               aria-label="Master volume"
+               aria-valuemin="0"
+               aria-valuemax="100"
+               aria-valuenow="70">
+      </div>
+
+      <!-- Accessibility -->
+      <div class="footer-group" role="group" aria-label="Accessibility options">
+
+        <button type="button"
+                id="toggle-reduced-motion"
+                class="icon-btn"
+                aria-label="Toggle reduced motion — disables all animations"
+                aria-pressed="false"
+                title="Reduced motion">
+          🔄 Motion
+        </button>
+
+        <button type="button"
+                id="toggle-high-contrast"
+                class="icon-btn"
+                aria-label="Toggle high contrast mode for improved readability"
+                aria-pressed="false"
+                title="High contrast">
+          🔲 Contrast
+        </button>
+
+        <button type="button"
+                id="toggle-no-flash"
+                class="icon-btn"
+                aria-label="Toggle no-flash mode — disables flashing lights and high-intensity visual effects for photosensitive users"
+                aria-pressed="false"
+                title="No flash / epilepsy safe mode">
+          ⚡ No Flash
+        </button>
+
+      </div>
+
+    </div>
+
+    <span class="footer-credit" aria-label="RoboSlots version 2">
+      RoboSlots v2 · Iteration 2
+    </span>
+
+  </footer><!-- /app-footer -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       AVATAR DIALOG
+       Uses the native <dialog> element.
+       • Browser handles focus trap automatically.
+       • Escape key closes it (built-in browser behaviour).
+       • The explicit close button also always works.
+       ══════════════════════════════════════════════════════════════════════ -->
+  <dialog id="avatar-dialog"
+          aria-labelledby="dialog-title"
+          aria-describedby="dialog-desc">
+
+    <div class="dialog-panel">
+
+      <header class="dialog-header">
+        <h2 id="dialog-title" class="dialog-title">Choose Your Avatar</h2>
+        <button type="button"
+                id="avatar-close-btn"
+                class="dialog-close"
+                aria-label="Close avatar selector">
+          &times;
+        </button>
+      </header>
+
+      <div class="dialog-body">
+
+        <p id="dialog-desc" style="font-size:var(--text-sm);color:var(--text-secondary)">
+          Pick a robot avatar and enter a display name. Your choices are saved locally.
+        </p>
+
+        <!-- Avatar grid — populated by ui.js _populateAvatarOptions() -->
+        <div id="avatar-options"
+             class="avatar-options-grid"
+             role="listbox"
+             aria-label="Avatar options">
+        </div>
+
+        <!-- Name input -->
+        <div class="name-input-group">
+          <label for="player-name-input">Display name (max 20 characters)</label>
+          <input type="text"
+                 id="player-name-input"
+                 class="name-input"
+                 maxlength="20"
+                 placeholder="Enter your name…"
+                 autocomplete="nickname"
+                 spellcheck="false">
+        </div>
+
+        <!-- Actions -->
+        <div class="dialog-actions">
+          <button type="button"
+                  class="btn btn--ghost"
+                  onclick="document.getElementById('avatar-dialog').close()">
+            Cancel
+          </button>
+          <button type="button"
+                  id="confirm-avatar-btn"
+                  class="btn btn--primary">
+            ✓ Confirm
+          </button>
+        </div>
+
+      </div><!-- /dialog-body -->
+
+    </div><!-- /dialog-panel -->
+
+  </dialog><!-- /avatar-dialog -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       WIN OVERLAY
+       Full-screen effect for big / mega / jackpot wins.
+       Dismissed automatically after a fixed duration, or by the close button.
+       aria-hidden toggled by ui.js; aria-live announces wins to screen readers.
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div id="win-overlay"
+       class="win-overlay"
+       aria-live="assertive"
+       aria-atomic="true"
+       aria-hidden="true">
+
+    <div class="win-overlay-content">
+      <div id="win-overlay-label"  class="win-overlay-label"></div>
+      <div id="win-overlay-amount" class="win-overlay-amount"></div>
+      <button type="button"
+              id="win-overlay-close"
+              class="win-overlay-close"
+              aria-label="Dismiss win notification">
+        Tap to continue
+      </button>
+    </div>
+
+  </div><!-- /win-overlay -->
+
+
+  <!-- Particle / effects layer — purely visual, aria-hidden -->
+  <div id="effects-layer" aria-hidden="true"></div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SCRIPTS
+       Load order: rng (no deps) → gameLogic (needs rng) → ui (needs both)
+       All scripts are at the bottom of <body> so the DOM is ready.
+       ══════════════════════════════════════════════════════════════════════ -->
+  <script src="rng.js"></script>
+  <script src="gameLogic.js"></script>
+  <script src="audio.js"></script>
+  <script src="ui.js"></script>
+  <script>
+    // Entry point — called once DOM + all modules are ready
+    document.addEventListener('DOMContentLoaded', () => {
+      UI.init();
+
+      // Wire up the leaderboard "Save My Score" button in the rankings tab
+      // (duplicated from the sidebar button — both call the same save logic)
+      const lbSaveBtn = document.getElementById('save-score-btn-lb');
+      if (lbSaveBtn) {
+        // Remove the inline onclick and replace with proper event listener
+        lbSaveBtn.removeAttribute('onclick');
+        lbSaveBtn.addEventListener('click', () => {
+          GameLogic.saveScore();
+          UI.renderLeaderboard();
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>
