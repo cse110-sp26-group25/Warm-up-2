@@ -5,7 +5,7 @@
 | :--- | :--- |
 | Shawn Wang | Present |
 | Pranav Ganesan | Absent |
-| Sahana Rangaraj | Present |
+| Sahana Rangaraj | [Personal Research](/plan/raw-research/personal%20research/sRangarajResearch.md)  |
 | Quinton Fu | Absent |
 | Wayne Su | Absent |
 | Kabyan Pathak | Present |
