@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ROBO-SLOTS 3000</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="description" content="A robot-themed browser slot machine game." />
+</head>
+<body class="theme-robot" data-reducedmotion="false" data-epilepsysafe="false">
+
+  <!-- Skip nav for screen readers -->
+  <a href="#main-game" class="skip-link">Skip to game</a>
+
+  <!-- ===== HEADER ===== -->
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+      <div class="logo-area">
+        <svg class="logo-icon" viewBox="0 0 48 48" aria-hidden="true">
+          <rect x="8" y="14" width="32" height="24" rx="4" fill="#e53935"/>
+          <rect x="18" y="8" width="12" height="8" rx="2" fill="#e53935"/>
+          <circle cx="17" cy="24" r="4" fill="#fff176"/>
+          <circle cx="31" cy="24" r="4" fill="#fff176"/>
+          <circle cx="17" cy="24" r="2" fill="#333"/>
+          <circle cx="31" cy="24" r="2" fill="#333"/>
+          <rect x="16" y="32" width="16" height="3" rx="1" fill="#69f0ae"/>
+          <rect x="4" y="20" width="4" height="8" rx="2" fill="#e53935"/>
+          <rect x="40" y="20" width="4" height="8" rx="2" fill="#e53935"/>
+        </svg>
+        <h1 class="logo-text">ROBO-SLOTS <span class="logo-3000">3000</span></h1>
+      </div>
+      <nav class="top-nav" aria-label="Main navigation">
+        <button class="nav-btn" id="btn-leaderboard" aria-controls="panel-leaderboard">Leaderboard</button>
+        <button class="nav-btn" id="btn-achievements" aria-controls="panel-achievements">Achievements</button>
+        <button class="nav-btn" id="btn-stats" aria-controls="panel-stats">Stats</button>
+        <button class="nav-btn" id="btn-chat" aria-controls="panel-chat">Chat</button>
+        <button class="nav-btn" id="btn-settings" aria-controls="panel-settings">Settings</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== MAIN GAME ===== -->
+  <main id="main-game" class="game-layout" role="main">
+
+    <!-- Background ambient particles -->
+    <div class="bg-particles" aria-hidden="true">
+      <span class="particle p1"></span><span class="particle p2"></span>
+      <span class="particle p3"></span><span class="particle p4"></span>
+      <span class="particle p5"></span><span class="particle p6"></span>
+    </div>
+
+    <!-- LEFT PANEL: Robot mascot + chat -->
+    <aside class="panel-left" aria-label="Robot mascot">
+      <div class="robot-mascot" id="robot-mascot" tabindex="0" role="button"
+           aria-label="Click the robot for a reaction" title="Click me!">
+        <!-- SVG Robot built inline for animation control -->
+        <svg id="robot-svg" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- Antenna -->
+          <line x1="60" y1="10" x2="60" y2="28" stroke="#e53935" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="60" cy="8" r="5" fill="#fff176" class="antenna-ball"/>
+          <!-- Head -->
+          <rect x="25" y="28" width="70" height="55" rx="10" fill="#e53935" class="robot-head"/>
+          <!-- Eyes -->
+          <rect x="35" y="42" width="20" height="14" rx="4" fill="#fff" class="eye-socket"/>
+          <rect x="65" y="42" width="20" height="14" rx="4" fill="#fff" class="eye-socket"/>
+          <circle cx="45" cy="49" r="5" fill="#1a237e" class="eye-pupil left-pupil"/>
+          <circle cx="75" cy="49" r="5" fill="#1a237e" class="eye-pupil right-pupil"/>
+          <circle cx="47" cy="47" r="2" fill="#fff" class="eye-shine"/>
+          <circle cx="77" cy="47" r="2" fill="#fff" class="eye-shine"/>
+          <!-- Mouth / display -->
+          <rect x="35" y="62" width="50" height="12" rx="3" fill="#111" class="mouth-display"/>
+          <text x="60" y="73" text-anchor="middle" font-family="monospace" font-size="9" fill="#69f0ae" class="mouth-text">READY</text>
+          <!-- Ears -->
+          <rect x="12" y="38" width="13" height="20" rx="4" fill="#c62828"/>
+          <rect x="95" y="38" width="13" height="20" rx="4" fill="#c62828"/>
+          <circle cx="19" cy="48" r="4" fill="#fff176"/>
+          <circle cx="101" cy="48" r="4" fill="#fff176"/>
+          <!-- Neck -->
+          <rect x="50" y="83" width="20" height="10" rx="3" fill="#c62828"/>
+          <!-- Body -->
+          <rect x="20" y="93" width="80" height="65" rx="10" fill="#e53935" class="robot-body"/>
+          <!-- Chest panel -->
+          <rect x="32" y="103" width="56" height="40" rx="6" fill="#b71c1c"/>
+          <!-- Chest lights -->
+          <circle cx="46" cy="115" r="5" fill="#69f0ae" class="chest-light cl1"/>
+          <circle cx="60" cy="115" r="5" fill="#fff176" class="chest-light cl2"/>
+          <circle cx="74" cy="115" r="5" fill="#ff5252" class="chest-light cl3"/>
+          <!-- Chest meter -->
+          <rect x="36" y="126" width="48" height="8" rx="3" fill="#111"/>
+          <rect x="37" y="127" width="20" height="6" rx="2" fill="#69f0ae" class="chest-meter"/>
+          <!-- Arms -->
+          <rect x="2" y="98" width="18" height="50" rx="8" fill="#e53935" class="robot-arm left-arm"/>
+          <rect x="100" y="98" width="18" height="50" rx="8" fill="#e53935" class="robot-arm right-arm"/>
+          <!-- Hands -->
+          <circle cx="11" cy="153" r="9" fill="#c62828" class="robot-hand"/>
+          <circle cx="109" cy="153" r="9" fill="#c62828" class="robot-hand"/>
+          <!-- Legs -->
+          <rect x="33" y="158" width="22" height="18" rx="6" fill="#c62828"/>
+          <rect x="65" y="158" width="22" height="18" rx="6" fill="#c62828"/>
+          <!-- Feet -->
+          <rect x="28" y="170" width="30" height="10" rx="5" fill="#b71c1c"/>
+          <rect x="62" y="170" width="30" height="10" rx="5" fill="#b71c1c"/>
+        </svg>
+        <div class="robot-bubble" id="robot-bubble" aria-live="polite" aria-atomic="true"></div>
+      </div>
+
+      <!-- Mini chat widget -->
+      <section class="chat-mini" aria-label="Quick chat">
+        <div class="chat-messages" id="chat-messages" role="log" aria-live="polite"></div>
+        <form class="chat-form" id="chat-form" autocomplete="off">
+          <input type="text" id="chat-input" placeholder="Talk to ROBO..." maxlength="120"
+                 aria-label="Chat message input" />
+          <button type="submit" aria-label="Send message">&#9658;</button>
+        </form>
+      </section>
+    </aside>
+
+    <!-- CENTER: Slot Machine -->
+    <section class="slot-machine-wrapper" aria-label="Slot machine">
+
+      <!-- Win flash overlay -->
+      <div class="win-flash-overlay" id="win-flash" aria-hidden="true"></div>
+
+      <!-- Machine frame -->
+      <div class="machine-frame">
+        <!-- Top lights bar -->
+        <div class="lights-bar top-lights" aria-hidden="true">
+          <span class="light l1"></span><span class="light l2"></span><span class="light l3"></span>
+          <span class="light l4"></span><span class="light l5"></span><span class="light l6"></span>
+          <span class="light l7"></span><span class="light l8"></span>
+        </div>
+
+        <!-- Jackpot display -->
+        <div class="jackpot-display" aria-live="polite" aria-label="Current jackpot">
+          <span class="jackpot-label">JACKPOT</span>
+          <span class="jackpot-amount" id="jackpot-amount">$1,000</span>
+        </div>
+
+        <!-- Reels window -->
+        <div class="reels-window" role="img" aria-label="Slot reels" aria-live="assertive" id="reels-aria">
+          <div class="reel-container" id="reel-0">
+            <div class="reel-strip" id="strip-0"></div>
+          </div>
+          <div class="reel-divider" aria-hidden="true"></div>
+          <div class="reel-container" id="reel-1">
+            <div class="reel-strip" id="strip-1"></div>
+          </div>
+          <div class="reel-divider" aria-hidden="true"></div>
+          <div class="reel-container" id="reel-2">
+            <div class="reel-strip" id="strip-2"></div>
+          </div>
+          <div class="reel-divider" aria-hidden="true"></div>
+          <div class="reel-container" id="reel-3">
+            <div class="reel-strip" id="strip-3"></div>
+          </div>
+          <div class="reel-divider" aria-hidden="true"></div>
+          <div class="reel-container" id="reel-4">
+            <div class="reel-strip" id="strip-4"></div>
+          </div>
+          <!-- Payline indicator (center row) -->
+          <div class="payline" aria-hidden="true"></div>
+        </div>
+
+        <!-- Near-miss indicator -->
+        <div class="near-miss-bar" id="near-miss-bar" aria-live="polite" role="status"></div>
+
+        <!-- Result display -->
+        <div class="result-display" id="result-display" aria-live="assertive" role="status"></div>
+
+        <!-- Win coin burst -->
+        <div class="coin-burst" id="coin-burst" aria-hidden="true"></div>
+
+        <!-- Bet controls -->
+        <div class="bet-controls">
+          <label for="bet-select" class="bet-label">BET</label>
+          <div class="bet-buttons" role="group" aria-label="Bet amount">
+            <button class="bet-btn active" data-bet="1" aria-pressed="true">$1</button>
+            <button class="bet-btn" data-bet="5" aria-pressed="false">$5</button>
+            <button class="bet-btn" data-bet="10" aria-pressed="false">$10</button>
+            <button class="bet-btn" data-bet="25" aria-pressed="false">$25</button>
+          </div>
+        </div>
+
+        <!-- MAIN SPIN BUTTON -->
+        <button class="spin-btn" id="spin-btn" aria-label="Spin the reels (Space)" title="Press SPACE or click to spin">
+          <span class="spin-btn-inner">
+            <svg class="spin-icon" viewBox="0 0 40 40" aria-hidden="true">
+              <circle cx="20" cy="20" r="18" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="6 4"/>
+              <polygon points="20,8 28,26 12,26" fill="#fff"/>
+            </svg>
+            <span class="spin-label">SPIN</span>
+          </span>
+        </button>
+
+        <!-- Winnings display -->
+        <div class="winnings-display" aria-label="Total winnings">
+          <span class="winnings-label">WON</span>
+          <span class="winnings-amount" id="winnings-amount">$0.00</span>
+        </div>
+
+        <!-- Bottom lights -->
+        <div class="lights-bar bottom-lights" aria-hidden="true">
+          <span class="light l1"></span><span class="light l2"></span><span class="light l3"></span>
+          <span class="light l4"></span><span class="light l5"></span><span class="light l6"></span>
+          <span class="light l7"></span><span class="light l8"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Leaderboard + stats -->
+    <aside class="panel-right" aria-label="Leaderboard and stats">
+
+      <!-- Live leaderboard -->
+      <section class="leaderboard-widget" aria-labelledby="lb-title">
+        <h2 id="lb-title" class="widget-title">TOP UNITS</h2>
+        <ol class="leaderboard-list" id="leaderboard-list" aria-label="Leaderboard"></ol>
+      </section>
+
+      <!-- Player stats -->
+      <section class="stats-widget" aria-labelledby="stats-title">
+        <h2 id="stats-title" class="widget-title">YOUR STATS</h2>
+        <dl class="stats-list" id="stats-list">
+          <div class="stat-row"><dt>Spins</dt><dd id="stat-spins">0</dd></div>
+          <div class="stat-row"><dt>Wins</dt><dd id="stat-wins">0</dd></div>
+          <div class="stat-row"><dt>Best Win</dt><dd id="stat-best">$0</dd></div>
+          <div class="stat-row"><dt>Jackpots</dt><dd id="stat-jackpots">0</dd></div>
+          <div class="stat-row"><dt>Time Played</dt><dd id="stat-time">0m</dd></div>
+        </dl>
+      </section>
+
+      <!-- Achievements strip -->
+      <section class="achievements-widget" aria-labelledby="ach-title">
+        <h2 id="ach-title" class="widget-title">ACHIEVEMENTS</h2>
+        <div class="achievements-grid" id="achievements-grid"></div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- ===== SLIDE-OVER PANELS ===== -->
+  <div class="panel-overlay" id="panel-overlay" aria-hidden="true"></div>
+
+  <!-- Settings panel -->
+  <aside class="slide-panel" id="panel-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+    <button class="panel-close" data-close="panel-settings" aria-label="Close settings">&#x2715;</button>
+    <h2 id="settings-title">Settings</h2>
+    <div class="settings-group">
+      <label class="toggle-label">
+        <input type="checkbox" id="toggle-sound" checked /> Sound Effects
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="toggle-music" /> Background Music
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="toggle-reduced-motion" /> Reduced Motion
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="toggle-epilepsy-safe" /> Epilepsy Safe Mode
+      </label>
+      <label class="range-label">
+        Master Volume
+        <input type="range" id="volume-master" min="0" max="100" value="70" aria-label="Master volume" />
+      </label>
+      <label class="range-label">
+        Music Volume
+        <input type="range" id="volume-music" min="0" max="100" value="40" aria-label="Music volume" />
+      </label>
+    </div>
+    <div class="settings-group">
+      <h3>Avatar</h3>
+      <div class="avatar-row">
+        <label>Name: <input type="text" id="player-name" maxlength="16" placeholder="UNIT-????"/></label>
+        <div class="avatar-colors" id="avatar-colors" role="group" aria-label="Avatar color">
+          <button class="avatar-color-btn" data-color="#e53935" style="background:#e53935" aria-label="Red"></button>
+          <button class="avatar-color-btn" data-color="#69f0ae" style="background:#69f0ae" aria-label="Green"></button>
+          <button class="avatar-color-btn" data-color="#fff176" style="background:#fff176" aria-label="Yellow"></button>
+          <button class="avatar-color-btn" data-color="#40c4ff" style="background:#40c4ff" aria-label="Blue"></button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Full leaderboard panel -->
+  <aside class="slide-panel" id="panel-leaderboard" role="dialog" aria-modal="true" aria-labelledby="lb-panel-title" hidden>
+    <button class="panel-close" data-close="panel-leaderboard" aria-label="Close leaderboard">&#x2715;</button>
+    <h2 id="lb-panel-title">Global Leaderboard</h2>
+    <ol class="leaderboard-list full" id="leaderboard-full"></ol>
+  </aside>
+
+  <!-- Achievements panel -->
+  <aside class="slide-panel" id="panel-achievements" role="dialog" aria-modal="true" aria-labelledby="ach-panel-title" hidden>
+    <button class="panel-close" data-close="panel-achievements" aria-label="Close achievements">&#x2715;</button>
+    <h2 id="ach-panel-title">Achievements</h2>
+    <div class="achievements-full" id="achievements-full"></div>
+  </aside>
+
+  <!-- Stats panel -->
+  <aside class="slide-panel" id="panel-stats" role="dialog" aria-modal="true" aria-labelledby="stats-panel-title" hidden>
+    <button class="panel-close" data-close="panel-stats" aria-label="Close stats">&#x2715;</button>
+    <h2 id="stats-panel-title">Your Statistics</h2>
+    <div id="stats-full"></div>
+  </aside>
+
+  <!-- Chat panel -->
+  <aside class="slide-panel wide" id="panel-chat" role="dialog" aria-modal="true" aria-labelledby="chat-panel-title" hidden>
+    <button class="panel-close" data-close="panel-chat" aria-label="Close chat">&#x2715;</button>
+    <h2 id="chat-panel-title">Global Chat Room</h2>
+    <div class="chat-room-messages" id="chat-room-messages" role="log" aria-live="polite"></div>
+    <form class="chat-room-form" id="chat-room-form" autocomplete="off">
+      <input type="text" id="chat-room-input" placeholder="Say something..." maxlength="200" aria-label="Global chat input"/>
+      <button type="submit">Send</button>
+    </form>
+  </aside>
+
+  <!-- Win celebration overlay -->
+  <div class="win-celebration" id="win-celebration" aria-hidden="true" role="status">
+    <div class="win-amount-display" id="win-amount-display"></div>
+    <div class="win-label-display" id="win-label-display"></div>
+  </div>
+
+  <!-- Scripts — order matters -->
+  <script src="rng.js"></script>
+  <script src="security.js"></script>
+  <script src="audio.js"></script>
+  <script src="gameLogic.js"></script>
+  <script src="achievements.js"></script>
+  <script src="leaderboard.js"></script>
+  <script src="chat.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>
