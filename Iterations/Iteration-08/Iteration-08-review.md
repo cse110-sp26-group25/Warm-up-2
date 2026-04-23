@@ -1,10 +1,12 @@
 # Iteration 8 Review
 
-## Query Data:
-- Input tokens: _(fill in)_
-- Output tokens: _(fill in)_
-- Total tokens: _(fill in)_
-- Query time: _(fill in)_
+## Query Data
+
+Category	Value / Description
+Input tokens	~15.2k (Full Iteration 07 Context + Plan + Reference Docs)
+Output tokens	~18.5k (Total for 11 code files + 1 log entry + architecting logic)
+Total tokens	~33.7k
+Query time	~25 Minutes 
 
 ## Iteration Information:
 | Category           | Value / Description |
