@@ -3,7 +3,7 @@
 ## Team Roster
 | Member | Link to personal research |
 | :--- | :--- |
-| Shawn Wang | Present |
+| Shawn Wang | [Personal Research](/plan/raw-research/personal%20research/ShawnWangResearch.md) |
 | Pranav Ganesan | [Personal Research](/plan/raw-research/personal%20research/pGanesanResearch.md) |
 | Sahana Rangaraj | [Personal Research](/plan/raw-research/personal%20research/sRangarajResearch.md)  |
 | Quinton Fu | [Personal Research](/plan/raw-research/personal%20research/QuintonFuResearch.md) |
@@ -19,17 +19,23 @@
 
 ### External Considerations for the Slot Machine
 - Legality: We need to be considerate of the law, and since this is an online slot machine, we have more restrictions that we need to consider
+  - The Return to Player needs to be somewhere around 75-80%
 - People's reception of slot machiens
   - Values smoth gameplay and visually appealing interfaces. Also prefers balanced payouts and realistic randomness.
 - Audience: Since it is a website, it is going to generate a wider age rage (18-60).
   - Each age range has differing preferences where younger audiences perfer quick sessions and older audiences prefer longer sessions
+  - We also need to ensure that anyone that enters the site is 18+
 - Be aware of any legal problems that can be brought up by an online slot machien
   - Make the animation not too fast to avoid anything that can be considered autoplay. Also includes systems where macro uses can be detected and prevented
+- We need a forum where people can report errors or bugs to account for the users and to be in line with the law
+- The RNG cannot be manipulated once it outputs a result, so there can't be any admin abuse associated with it
 
 ### Slot Machine Features: 
 
 #### The Machine Itself
 - We want to have our payouts to be mathematically sound for us to make money and for the users to not feel ripped off, using Probably Fair Algorithms
+- Basic slot machine mechanics
+  - 3x5 formation, several differnt jackpots, scaling rewards, etc
 - Needs to be accessible to anyone (that is of age).
   - Spacebar spins, something that doesn't require effort or any extra strain on the user (Fitts' Law).
   - Visible and audio accessibility: Helpful for those who are hard of hearing as well as hearing sensitive. Also considerate to the user's eye strain 
@@ -40,6 +46,7 @@
 - Needs a variable bet size to accomodate for people who want to spend more/less that the standard
 
 #### Visuals / Audio
+- The machine needs to be majority animation where the bottom 3rd of the screen is the actual slots
 - Could include audio to mimic other people also playing, lessens the anxiety of those new to gambling.
 - Most slot machines are very saturated in color. Could lean into this rather than the neon asthetic 
 - Icons are typically a contrasting color to the base machine, but do not contrast as much as we assumed. This may be an attempt to draw less attention for entertainment/experience focused users, keeping them focused on the big animations and the general gameplay loop rather than the "game" aspect.
@@ -50,6 +57,7 @@
   - Timed stimulus (something like an earnable floating around, and when clicked, would receive some sort of bonus)
   - High BPM music but also be considerate about making the music too annoying and "in your face"
   - Low effort fidget: Something the user can do to instead of slot machines if they ever get tired of it.
+- Possibly make the slot machine look less like a slot machine (gamify it) to make users associate it with gaming rather than gambling.
 
 #### Social Aspects
 - Displaying other players' **REAL** jackpots to create a sense of FOMO.
