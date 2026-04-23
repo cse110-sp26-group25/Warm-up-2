@@ -88,8 +88,8 @@ Thank you for your input
 | Iteration 13     | Claude was really successful this iteration. It was able to follow the directions of the prompt clearly and it resulted in an output that satisfies most if not all of the noted changes in the prompt, with minimal errs. |
 | Iteration 14     | Claude handed this iteration pretty well. It was able to follow the directions of the prompt and satisfies most of the core fixes the prompt suggested, although it still had a small fair share of slip-ups. Overall: Successful. |
 | Iteration 15     | CLaude ran so-so. It was able to fix some of the prompts requests, but it looks like the UI took a big hit in exchange, even when it was unprompted to do so. Maybe referencing the original prompt as a part of iteration 15's prompt may lead the AI to be confused about what to change. Overall: Slightly Unsuccessful. |
-| Iteration 16     | |
-| Iteration 17     | |
+| Iteration 16     | With more specific calls to what Claude should change and how it should change it, Claude can more accurately deal with the issues brought up in the prompt. Overall: Successful |
+| Iteration 17     | While the amount of tasks presented in the prompt was large, the short, concise, and direct rules presented didn't really matter as much in the long run. With everything organized within its own special, Claude was able to follow the prompt pretty successfully aside from a few errors. Overall: Pretty Successful. |
 | Iteration 18     | |
 | Iteration 19     | |
 | Iteration 20     | |
