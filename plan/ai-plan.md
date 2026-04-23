@@ -96,9 +96,10 @@ the project**, clearly separated and labeled, with clean structure and maintaina
 - Cheer Animations/ words splash across screen for non audio players
 - Other background animations required / Webpage too blank 
 
-# Learnings from Iteration 3
-- 
-- 
-  
-
+# Learnings from Iteration 3-4
+- Prompting the Ai by telling it what not to do is more effective than telling it what to do.
+  - When prompting to move away from emoji icons Claude was able to switch to more "unique" graphics.
+  - On the other hand, simply stating to change colors and add more animations isn't sucesseding, the changes are minimal.
+  - This might be because it's hard for Claude to determine what "meaningful" change is, as it's an arbituary standard. On the other had, a more binary or specific intruction forces drastic changes. 
+- Being more specific about the code files we intend Claude to iterate rather than just saying iterate seems to be working, the drift from iteration 3 to 4 was extremely minimal in comparison to the previous warmup. 
 
