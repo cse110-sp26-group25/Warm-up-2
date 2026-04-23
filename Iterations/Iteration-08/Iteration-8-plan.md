@@ -1,55 +1,65 @@
+# Iteration 08: System Hardening & Professional UX Refinement
 
-## Iteration 08 Plan
-Goals
+## 1. Goals and Objectives
+The objective of Iteration 08 is to transition the "ROBO-SLOTS 3000" from a functional prototype into a production-grade software application. This iteration focuses on **Persistence, Architectural Integrity, and High-Fidelity Feedback Loops**. We are moving away from simple feature additions toward "System Hardening" to ensure the project meets the "Software Engineering Quality" criteria defined in the lab manual.
 
-The primary objective of Iteration 08 is to transition the project from a "visual prototype" to a "stable software product." We will focus on implementing persistent state, fixing deep-seated audio-visual bugs, and enforcing strict Software Engineering documentation standards (JSDocs).
+### Primary Objectives:
+* **State Persistence:** Implement a full-stack simulation using `localStorage` to ensure the "User Experience" is not reset on refresh (crucial for User 5/Joe and User 3/Steven).
+* **Advanced Motion Graphics:** Replace the "flicker" spin with a high-performance CSS-filtered motion blur to simulate mechanical speed.
+* **Hardware-Software Sync:** Bridge the logical gap between the UI Settings (Sliders) and the Web Audio API (Engine).
+* **Semantic Integrity:** Perform a "Standardization Pass" to eliminate "Div Slop" and enforce HTML5 semantic standards for accessibility.
+* **Documentation Excellence:** Enforce 100% JSDoc coverage to satisfy the "Readability" and "Appropriate Use" grading rubrics.
 
-System Persistence: Implement localStorage to ensure player data (balance, stats, achievements) survives a page refresh—satisfying the "Regular Guy" persona's need for progress.
+---
 
-Audio-UI Synchronization: Bridge the gap between the settings.js UI and the audio.js engine, ensuring volume sliders actually control gain levels.
+## 2. Master Prompt (Iteration 08)
 
-UX Polish: Enhance the spin animation with motion blur and transform the static spin button into a thematic, interactive "Robot Lever."
+**Role:** You are a Senior Frontend Engineer specializing in Psychological UX and High-Performance Web Applications.
 
-Code Quality: Perform a "Standardization Pass" to replace all remaining magic numbers and add full JSDoc coverage for TA review readiness.
+**Context:** Reference the `OriginalPrompt.txt` as the authoritative specification for personas and math logic. Use the Iteration 07 codebase as the baseline. We are in the final "Hardening" phase before the 11:59 PM project deadline.
 
-Prompt being used
+**Mission:** Execute a comprehensive refactor of Iteration 07 to implement persistence, fix interaction debt, and enforce strict Software Engineering standards.
 
-Context: Keep the original vision (robot theme, accessible, medically sound payout) and guardrails defined in OriginalPrompt.txt as the authoritative specification. Use the current codebase from Iteration 07 as the source.
+**Detailed Requirements:**
 
-Task: Your specific task for Iteration 08 is to implement persistent storage and refine the interactive feedback loop.
+### A. Persistence & State Management
+* **LocalStorage Integration:** Create a `PersistenceManager` module. Save the following to `localStorage`: `currentBalance`, `totalSpins`, `accumulatedJackpot`, and the `unlockedAchievements` array.
+* **Session Restoration:** Upon initialization, the game must check for existing data. If found, the "Robot Mascot" should provide a contextual, humorous comment about "restoring the player's digital debt" or "remembering their previous failures."
 
-Engineering & Feature Requirements:
+### B. High-Fidelity UX & Animation
+* **The Mechanical Lever:** Redesign the 'SPIN' button. It must no longer be a static circle. Style it as a 3D-effect mechanical lever or a glowing "Power Core." It must include `:active` and `:hover` states with distinct CSS transitions.
+* **Motion Blur Reels:** During the `spin` state, apply a `filter: blur(4px)` and `transform: translateY` animation to the reel icons to simulate a high-speed mechanical roll. The stop must be staggered (left to right) with a "bounce" effect (overshoot) to mimic physical momentum.
 
-Persistence: Use localStorage to save and load the player's bankroll, total spins, and unlocked achievements.
+### C. Audio-Engine Synchronization
+* **Gain Node Control:** Refactor `audio.js` to utilize the **Web Audio API**. Connect the 'Master Volume' and 'Music Volume' sliders in the settings menu to the `GainNode`. 
+* **Ambient Soundscape:** Ensure background music is looped seamlessly and does not restart or stutter when menus are opened.
 
-Interactive Spin: Transform the central spin button into a mechanical lever or glowing power core. Add a CSS "motion blur" filter effect to the reels during the spin cycle to increase the "near-miss" excitement.
+### D. Software Engineering Standards (Non-Negotiable)
+* **Semantic HTML5:** Replace at least 60% of nested `<div>` elements with semantic tags: `<main>` for the machine, `<section>` for stats/leaderboards, `<aside>` for the chat, and `<nav>` for the header tabs.
+* **JSDoc Documentation:** Every single function across all `.js` files must include a JSDoc block with `@description`, `@param` (with types), and `@returns`. 
+* **Zero Magic Numbers:** Create a `Config` object in a separate file or at the top of `gameLogic.js` containing `STARTING_BALANCE`, `REEL_DELAY`, `BLUR_STRENGTH`, and `PAYOUT_RATES`. No raw numbers should exist in the logic.
+* **Error Handling:** Implement `try-catch` blocks around the `localStorage` and `AudioContext` initializations to prevent the app from crashing on restricted browsers.
 
-Audio Control: Connect the volume sliders in the settings menu to the Web Audio API in audio.js.
+---
 
-Semantic Refactor: Replace generic <div> containers with semantic HTML5 tags (<main>, <section>, <nav>) to improve screen reader compatibility.
+## 3. Prompt Adjustments & Rationale
+* **Why Persistence?** Previous iterations were "ephemeral." To simulate a real casino (Domain Knowledge), the player's history must matter. This satisfies the "Trust Fund Steven" persona who values his ranking over time.
+* **Why Semantic HTML?** Rule 3.5 explicitly forbids "excessive div usage." This iteration is a direct response to the "Div Slop" identified in the Iteration 7 review.
+* **Why JSDocs now?** As the code grows to 10+ files, manual readability is dropping. JSDocs are required to maintain the "as if one person wrote the whole thing" goal.
+* **Why Motion Blur?** Based on "Psychology of Slot Machines" research, the visual satisfaction of the "Near-Miss" is dependent on the perceived speed of the reels.
 
-Documentation: Every function in gameLogic.js, ui.js, and rng.js must include JSDoc annotations with @param and @type definitions.
+---
 
-No Magic Numbers: Define all game constants (e.g., spin duration, payout multipliers, starting balance) in a single configuration object at the top of the relevant files.
+## 4. Expected Learning Outcomes (For FINAL-REPORT.md)
+* Observe how the transition from "feature-building" to "refactoring" affects the stability of the AI-generated code.
+* Measure the difficulty of maintaining "Contextual Awareness" in the Chatbot after changing the underlying HTML structure.
+* Evaluate if the AI can successfully manage state across multiple sessions without manual "Hand-editing" of the `localStorage` logic.
 
-Prompt Adjustments
+---
 
-Shift to Persistence: Added an explicit requirement for localStorage to address "Downsides" in Iteration 7 where progress was lost on refresh.
-
-UX over Logic: Shifted focus from the 3x5 grid logic (completed in Iteration 7) to the visual "feel" of the spin via motion blur and button states.
-
-Standards Enforcement: Introduced a mandatory JSDoc and Semantic HTML requirement to comply with Rule 3.5 of the SWE Standards manual.
-
-Audio Logic: Added a "Synchronization" requirement to fix the "disconnected volume slider" issue noted in previous reviews.
-
-Rationale for this Iteration
-
-As we approach the final project deadline (11:59 PM), we must prioritize Deliverability. While Iteration 7 fixed the layout (3x5), it left the code "fragile." This iteration acts as the "Hardening Phase," ensuring that if a TA refreshes the page or checks the source code for JSDoc compliance, the project holds up under professional scrutiny.
-
-Performance Metrics to Observe
-
-Load Time: Does localStorage retrieval cause a stutter during the "humorous AI" initialization?
-
-DOM Density: Does the refactor from div to semantic tags significantly reduce the "Div Slop" reported in the Iteration 7 review?
-
-User Engagement: Does the "Motion Blur" animation accurately simulate the high-BPM excitement required by the original personas?
+## 5. Execution Steps
+1.  Initialize a fresh Claude 3.5 Sonnet session.
+2.  Provide the `OriginalPrompt.txt` as the "Constitutional" instruction.
+3.  Upload the Iteration 07 source code.
+4.  Execute the Iteration 08 Master Prompt.
+5.  Validate the output in "Live Server" before committing to the repository.
