@@ -24,7 +24,9 @@
 4. The comonents do not shrink and grow proprerly when the screen resizes. 
 
 #### Back end issues
-1. The leaderboard does not work when attemping to save your game. It always claims your number 1. 
+1. The leaderboard does not work when attemping to save your game. It always claims you're number 1.
+2. There are still a lot of hardcoded variables. Less so in the main html file, but they persist expecially in audio.js
+3. In style.css the comments claim there are no hard coded values. This is a lie.    
 ### Upsides
 
 #### Good front end
@@ -37,7 +39,9 @@
 7. You can chat with the robot. It's responces make sense 80% of the time. 
 
 #### Good back end
-1.
+1. The inline comments are really good. They provide information regarding functionality, intention, and where else to go in the codebase to find additional information. The code can be understood just by reading comments alone.
+2. Providing the origional prompt does seem to ensure the original criteria is met. The codebase maintains the cryptographically secure randomizer despite not being metioned in the new propmt.
+3. The accecability / reduce motion matches system/browser setting's automatically, doesn't need to be toggled by users with preexisting issues. 
 
 ## Notes for next iteration:
 1. Make the audio during the spin sound more like a standard slot machine.
