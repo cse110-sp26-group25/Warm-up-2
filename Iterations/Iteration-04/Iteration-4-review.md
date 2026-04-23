@@ -1,4 +1,19 @@
 ## Observations
+# Iteration 3 Review
+
+## Query Data:
+- Input tokens: 189
+- Output tokens: 58.5k
+- Total tokens: 58.5k
+- Query time: 17 minutes and 12 seconds
+
+## Iteration Information:
+|Category|Value / Description|
+|--------|-------------------|
+|Number of files| 6|
+|Number of folders| 0|
+|Lines of code| 598 added 175 removed|
+
 
 ### 1. Downsides
 
