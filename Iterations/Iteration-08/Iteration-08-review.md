@@ -2,18 +2,12 @@
 
 ## Query Data
 
-Category	Value / Description
-Input tokens	~15.2k (Full Iteration 07 Context + Plan + Reference Docs)
-Output tokens	~18.5k (Total for 11 code files + 1 log entry + architecting logic)
-Total tokens	~33.7k
-Query time	~25 Minutes 
-
-## Iteration Information:
-| Category           | Value / Description |
-|--------------------|---------------------|
-| Number of files    | 11                  |
-| Number of folders  | 1 (`Iterations/Iteration-08/slot-machine/`) |
-| Lines of code      | 4,176               |
+| Category | Value / Description |
+| :--- | :--- |
+| **Input tokens** | ~15,200 (Iteration 07 Source, Master Prompt, and AI-Use-Log) |
+| **Output tokens** | ~18,500 (Comprehensive refactor of 11 files + Log Entry) |
+| **Total tokens** | ~33,700 |
+| **Query time** | ~25 Minutes (Total elapsed for generation and validation) |
 
 ## Observations:
 
