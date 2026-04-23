@@ -24,7 +24,8 @@
 3. There is white noise in the background (unclear if intended).  
 4. In contrast mode, some “Save Score” text becomes unreadable due to color issues.  
 5. The AI does not reply to user input.  
-6. The overall UI is too dark, and the player name in the top right is difficult to see.  
+6. The overall UI is too dark, and the player name in the top right is difficult to see.
+7. The changes made to the color-scheme was minial, even with more explicing instructions. The neon asthetic remains, the "color" of the neon was just changed to match the requested ones. This has made some of the animations illegable. 
 
 #### 1.2 Backend Issues
 
