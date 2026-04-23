@@ -58,16 +58,6 @@ This process was then repeated, creating the following 20 iterations.
 
 ## Iterations
 
-### Iteration List
-| [Iteration 1](#iteration-1) | [Iteration 2](#iteration-2) | [Iteration 3](#iteration-3) | [Iteration 4](#iteration-4) | [Iteration 5](#iteration-5) |
-| :------------------------- | :------------------------- | :------------------------- | :------------------------- | :------------------------- | 
-| [Iteration 6](#iteration-6) | [Iteration 7](#iteration-7) | [Iteration 8](#iteration-8) | [Iteration 9](#iteration-9) | [Iteration 10](#iteration-10) |
-| [Iteration 11](#iteration-11) | [Iteration 12](#iteration-12) | [Iteration 13](#iteration-13) | [Iteration 14](#iteration-14) | [Iteration 15](#iteration-15) |
-| [Iteration 16](#iteration-16) | [Iteration 17](#iteration-17) | [Iteration 18](#iteration-18) | [Iteration 19](#iteration-19) | [Iteration 20](#iteration-20) |
----
-### Iteration 1
----
-
 <!--
 Maybe we should report our data in a table? 
 I don't think we need to go into the level of depths we have in the logs, 
@@ -75,324 +65,34 @@ it might be more effective just to report the "overall" section and a sentance o
 - Sahana
 -->
 
-
-
-#### Goals:
-- Create a baseline application using the original prompt found in our AI plan file
-- Set an exmaple for other iterations to follow
-
-##### What Went Well:
-- The colors and the UI and UX looks and feel nice
-- There is a lot of accessibility settings that was successfully implemented
-- The code is modular, filled with variables, and descriptive with the comments as well as the Classes and IDs
-
-##### What Didn't: 
-- The avatar settings didn't work
-- The UI is pretty boring and uninteresting
-  - Some elements of the US is oddly placed, in the way, or not supposed to be there
-- The animations are minimal
-- The structure of the slot machine doesn't match what we were looking for
-  - 3x3 instead of 3x5
-  - only 2 betting options
-- Colors are hard coded
-- The RNG is still accessible
-- A lot of div in the html
-- Missing Favicon
-
-#### Overall:
-It is a start, but Claude was generally unsuccessful in following its prompt.
-
----
-### Iteration 2
----
-
-#### Goals:
-- Fix all of the faults of the slot machine as found in the previous iteration
-
-#### What Went Well:
-- Peronalized Customization (avatar, accessibility, color changing) works
-- Lists directions on how to play
-- var is not overused in JS file
-
-#### What Didn't:
-- The sounds and visuals are lacking
-  - No audio in general
-  - Animations are lacking for winning
-- Social aspect is still a bit lacking
-  - User score is not saved
-  - Chatbox doesn't work properly
-  - The rankings can be shown in the front page
-
-#### Overall: 
-Claude was able to fix some of the issues the previous iteration had, but some errors are still present; it still didn't do much of what the prompt said, so it was slightly unsuccessful
-
----
-### Iteration 3
----
-
-#### Goals:
-- Fix all of the faults of the slot machine as found in the previous iteration
-
-#### What Went Well:
-- The Sound works
-- The UI works much better and even works on differnt devices
-- The visuals look better and help fit the slot machine
-- Ranking tab works
-- The randomizer is secure
-
-#### What Didn't:
-- The sounds feel off
-- The interactable robot works most of the time
-- There are some things that don't scale properly
-- Still have hard coded variables
-
-#### Overall:
-- Claude made a good amount of progress and was able to fix most issues, but it needs a bit more refinement, so overall, it was kind of successful
-
----
-### Iteration 4
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
-
----
-### Iteration 5
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
-
----
-### Iteration 6
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
-
----
-### Iteration 7
----
-
-#### Goals:
-
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
-
----
-### Iteration 8
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
-
----
-### Iteration 9
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
----
-### Iteration 10
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
----
-### Iteration 11
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
----
-### Iteration 12
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
----
-### Iteration 13
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
----
-### Iteration 14
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
----
-### Iteration 15
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
----
-### Iteration 16
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
----
-### Iteration 17
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
----
-### Iteration 18
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
----
-### Iteration 19
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
----
-### Iteration 20
----
-
-#### Goals:
-
-#### What Went Well:
-
-
-#### What Didn't:
-
-
-#### Overall:
-
-
+<!--
+Honestly that sounds much better to do!
+I'll change up the formatting to reflect it
+Thank you for your input
+- John 
+-->
+| Iteration Number | Overall Overview |
+| ---------------- | ---------------- |
+| Iteration 1      | It is a start, but Claude was generally unsuccessful in following its prompt. It makes sense since we gave Claude a lot of things to make for our slot machine. |
+| Iteration 2      | Claude was able to fix some of the issues the previous iteration had, but some errors are still present; it still didn't do much of what the prompt said, so it was slightly unsuccessful. Then again, the prompt was still just as long as the previous iteration. |
+| Iteration 3      | Claude made a good amount of progress and was able to fix most issues, but it needs a bit more refinement, so overall, it was kind of successful. The prompt was also much shorter compared to our original and since the scale of the issues it needed to fix was not as large, we were able to hone into some more detailed prompts.|
+| Iteration 4      | While the prompt wasn't as long, Claude wasn't able to follow some of the prompt's directions. Sometimes when it was able ot follow the prompt's direction, it felt like it was slightly off, or it forgot to consider something. There was some things that Clade kept constant, but it still didn't really deliver with the new things added as well as updating certain things to accomodate for the new things added, so overall, unsuccessful. |
+| Iteration 5      | Claude kind of regressed in progress with this iteration. It did fix it's audio, but it wasn't able to preserve the UI and changed it for the worse. As said before, the prompt was as long as the original, so claude did have a lot more to work around and consider. Overall: Unsuccessful. |
+| Iteration 6      | Claude ran into the same problems listed in the previous iteration. It wasn't able to preserve some aspects of the slot machine, and it wasn't able to fix parts it was tasked to fix. Another overall unsuccessful iteration. |
+| Iteration 7      | While there are some parts of the slot machine that needed to be worked on, given our prompt (and prompt size), Claude was able to fix all the things it was tasked to do, so it was overall successful. |
+| Iteration 8      | Claude was really successful in following the prompt given to it. The prompt was really detailed, going into what specifically Claude needed to look out for, and that aspect of it really worked to Claude's advantage. the prompt was also not overtly wordy. |
+| Iteration 9      | Again, Calude was successful. It really looks like the shorter and more concise the prompt is really had an impact on Claude actually being able to fix the issue.|
+| Iteration 10     | Claude had some issues in this iteration, it was able to property do half of the things stated in the prompt and when it didn't, there was some attempt made, but it fell short to the team's expectations. Overall: Slightly Unsuccessful. |
+| Iteration 11     | Claude was mostly successful in following the given prompts. It did really help to use explicit values as a part of the prompt rather than having Claude interpret what the prompter means. |
+| Iteration 12     | Claude fell short a bit in this iteration. While the prompting was detailed, it was still missing really specific specification. Claude in turn was left to interpret what exactly the prompter wants, so Claude was able to implement some stuff, but it did it in a way where it sort of interfered with existing spaces. Overall: a bit Unsuccesful. |
+| Iteration 13     | Claude was really successful this iteration. It was able to follow the directions of the prompt clearly and it resulted in an output that satisfies most if not all of the noted changes in the prompt, with minimal errs. |
+| Iteration 14     | Claude handed this iteration pretty well. It was able to follow the directions of the prompt and satisfies most of the core fixes the prompt suggested, although it still had a small fair share of slip-ups. Overall: Successful. |
+| Iteration 15     | CLaude ran so-so. It was able to fix some of the prompts requests, but it looks like the UI took a big hit in exchange, even when it was unprompted to do so. Maybe referencing the original prompt as a part of iteration 15's prompt may lead the AI to be confused about what to change. Overall: Slightly Unsuccessful. |
+| Iteration 16     | |
+| Iteration 17     | |
+| Iteration 18     | |
+| Iteration 19     | |
+| Iteration 20     | |
 
 
 
