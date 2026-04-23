@@ -140,3 +140,242 @@
 9. Add audios to cheer player on for combos and wins 
 10. More animations on screen for winnings: Big numbers flash or coins appear.
 11. More background animation to fit the theme and make the webpage less blank.
+
+# Iteration 3 Review
+
+## Query Data:
+- Input tokens: 12.2k
+- Output tokens: 159.3k
+- Total tokens: 261.5k
+- Query time: 16 minutes and 27 seconds
+
+## Iteration Information:
+|Category|Value / Description|
+|--------|-------------------|
+|Number of files| 6|
+|Number of folders| 0|
+|Lines of code| 853 added 96 removed|
+
+## Observations:
+
+### Downsides
+
+#### Front end issues
+1. The spinning sound does not sound like a slot machine.
+2. I hear random dings sometimes? I'm not sure if that's supposed to be remenicent of the ambient noise of other slot machines.
+3. I think the robot mascot is speaking but the speech bubble is completly cut off.
+4. The comonents do not shrink and grow proprerly when the screen resizes. 
+
+#### Back end issues
+1. The leaderboard does not work when attemping to save your game. It always claims your number 1. 
+### Upsides
+
+#### Good front end
+1. The sound is back!
+2. There is a ranking tab and it does seem to be accurate (Player is ranked appropriatly)
+3. There is a very explicit animation for "Big wins"
+4. The resizing is okay. The compenents do move to a vertical layout when zooming in, and seperate when zooming out.
+5. The icons have move away from emoji's and are thematically appropriate.
+6. The volume slider does work.
+7. You can chat with the robot. It's reponces make sence 80% of the time. 
+
+#### Good back end
+1.
+
+## Notes for next iteration:
+1. Make the audio during the spin sound more like a standard slot machine.
+2. Move away from standard "ai" slop background color. Focus more on red, yellows, and greens, and increase saturation rather than making neon colors.
+3. Make the spin button more thematically appropriate
+4. Do not use emoji's for the player icon.
+5. Include background music and ambient audio
+6. Add an acceability button to toggle flashing displays
+7. Make the leaderboard accurate to the players acculmulated points.
+8. Add more animations for small wins
+9. Make the background more intresting with aimations.
+10. Add audio for when the play doesn't get a win. 
+
+# Iteration 4 Review
+## Observations
+
+### 1. Downsides
+
+#### 1.1 Frontend Issues
+
+1. Spinning still doesn’t sound like a slot machine and has an airy sound.  
+2. The ding is also still there, but it may be intentional for ambiance.  
+3. There is white noise in the background (unclear if intended).  
+4. In contrast mode, some “Save Score” text becomes unreadable due to color issues.  
+5. The AI does not reply to user input.  
+6. The overall UI is too dark, and the player name in the top right is difficult to see.  
+
+#### 1.2 Backend Issues
+
+1. Spamming “Save Score” keeps adding to the existing score on the leaderboard (duplicate stacking bug).  
+
+---
+
+### 2. Upsides
+
+#### 2.1 Frontend Strengths
+
+1. Tracks spin count, total winnings, biggest win, and credits correctly.  
+2. Chatbot is present and functional (basic implementation works).  
+3. Sound system is implemented.  
+4. Motion accessibility works (flashing can be disabled).  
+5. Accessibility features are implemented and functional.  
+
+#### 2.2 Backend Strengths
+
+1. Files are well separated with good comments and code style.  
+2. Codebase is organized with clear sections and workflow.  
+
+---
+
+## Notes for Next Iteration
+
+1. Improve spinning audio to sound more like a realistic slot machine (less airy, more mechanical clicking/rolling).  
+2. Add distinct sound effects for different outcomes (loss, small win, big win, jackpot).  
+3. Slightly brighten the overall UI; current background is very dark and hides elements.  
+4. Fix contrast issues so all text (especially in contrast mode) is readable.  
+
+5. Fix leaderboard logic:
+   - Prevent multiple saves from stacking duplicate scores  
+   - Ensure saved score reflects final session value only  
+
+6. Improve chatbot behavior:
+   - Ensure it responds to all user inputs  
+   - Make responses more dynamic and less repetitive  
+
+7. Reduce repetition in game log messages (e.g., repeated phrases like “variance is a cruel teacher”).  
+
+8. Enhance background visuals:
+   - Add subtle animation or gradient movement  
+   - Avoid a static feel
+
+# Iteration 5 Review
+
+## Query Data:
+
+- Input tokens: 1.1k   
+- Output tokens: 108.1k  
+- Total tokens: 109.2k  
+- Query time: 26 minutes and 24 seconds 
+
+---
+
+## Iteration Information:
+
+| Category           | Value / Description |
+|-------------------|--------------------|
+| Number of files   | 10                 |
+| Number of folders | 0                  |
+| Lines of code     | 3289               |
+
+## Observations
+
+### Downsides
+
+#### Front End Issues
+1. Got rid of the 3x5 slot; should have retained the master prompt  
+2. Chat bot still isn’t responding appropriately to the info provided  
+3. Got rid of the lever animation  
+4. The spinning sound doesn’t match the animation  
+5. Went back to using fruit emojis  
+6. Doesn’t have rankings  
+
+#### Back End Issues
+1. Bunch of div slop  
+
+---
+
+### Upsides
+
+#### Good Front End
+1. Sounds better than what it did before  
+2. The AI chatbot is better than previous iteration  
+3. Fixes the save score duplication  
+
+#### Good Back End
+1. Good comments  
+2. Code style is consistent  
+3. Files are separated and not stacked into one file  
+
+---
+
+## Notes for Next Iteration
+
+1. Do not use emojis; replace with robot-themed graphics  
+2. Improve chat box so it responds more accurately to player messages  
+3. Add more flashing lights and better win animations (big numbers, coins, etc.)  
+4. Add interactive robot behavior for idle engagement (click/hover reactions)  
+5. Add fake rankings to make the leaderboard feel active  
+6. Enhance overall visuals with more robot and background animations  
+7. Add realistic slot machine sounds (spinning/churning)  
+8. Include background music or ambient noise  
+9. Add celebratory sounds for wins and combos
+
+# Iteration 6 Review
+
+## Query Data:
+
+- Input tokens: 462  
+- Output tokens: ~72.3k  
+- Total tokens: ~72.8k  
+- Query time: 14 minutes and 32 seconds  
+
+---
+
+## Iteration Information:
+
+| Category           | Value / Description |
+|-------------------|--------------------|
+| Number of files   | 10                 |
+| Number of folders | 0                  |
+| Lines of code     | 2763               |
+
+## Observations
+
+### Downsides
+
+#### Frontend Issues
+- Slot machine layout is not a standard 3x5 grid.
+- Music volume slider exists but no background music is implemented.
+- No system to save player score or progress.
+- Spin animation is broken or not visually accurate.
+- Missing lever or themed spin interaction animation.
+- Bet amounts lack variety and scaling options.
+- Infinite money system with no limits or balance control.
+
+#### Backend Issues
+- Excessive and inefficient use of div elements ("div slop").
+
+### Upsides
+
+#### Frontend Strengths
+- Visual design is bright, engaging, and more fun.
+- UI/UX is mostly functional and intuitive (except music issue).
+- Achievements system is implemented.
+- Stats tracking system is present.
+- Chatbot feature is included.
+
+#### Backend Strengths
+- Consistent coding style across files.
+- Code is well-commented and readable.
+
+---
+
+## Notes for Next Iteration
+
+- Fix slot machine layout to a proper 3x5 grid.
+- Implement working background music and connect it to the volume slider.
+- Add persistent save system (localStorage or backend).
+- Fix and improve spin animation to be smooth and realistic.
+- Add a lever or robot-themed spin interaction.
+- Expand betting system with more varied and scalable bet options.
+- Implement a proper money system with limits and balance tracking.
+- Refactor DOM structure to reduce unnecessary div usage.
+- Preserve and build on current strengths (visuals, UI/UX, achievements, stats, chatbot).
+- Improve chatbot to be more context-aware and responsive.
+- Enhance animations, audio feedback, and interactivity.
+- Ensure all updates are incremental and do not break existing functionality.
+- Maintain performance, accessibility, and clean code structure.
