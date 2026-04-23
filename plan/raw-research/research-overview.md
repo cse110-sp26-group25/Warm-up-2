@@ -13,7 +13,6 @@
 | John Hermosura | [Personal Research](/plan/raw-research/personal%20research/jHermosuraResearch.md) |
 | Jordan Tran | [Personal Research](/plan/raw-research/personal%20research/JordanTranResearch.md) |
 | Hojoon Kim | Present |
-| Ayla Kurdak (TA) | Invited |
 
 
 ## Research Overview 
