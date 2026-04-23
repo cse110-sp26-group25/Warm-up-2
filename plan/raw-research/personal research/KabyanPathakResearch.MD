@@ -9,7 +9,7 @@ Big wins: Make bigs wins to get player hooked
 Hit frequency: How often the machine will end up paying out
 
 
-##Legal:
+## Legal:
 
 
 ### Real Casinos:
