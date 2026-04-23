@@ -1,0 +1,1335 @@
+/* ==========================================================================
+   ROBO-SLOTS 3000 — Stylesheet (Iteration 16)
+   Theme palette: Reds (#e53935), Yellows (#fff176), Greens (#69f0ae)
+
+   Iteration 16 changes:
+     • Luck-warmup indicator: dull grey (#90a4ae) → glowing neon orange
+       (#ff9100) gradient replaces the 3-band green/yellow/red scheme.
+       A new `.lk-pulse-fast` class drives a non-linear anticipatory
+       pulse when the player is within 2 spins of the pity threshold.
+     • `.storage-warning.static` — post-10s stable state added. ui.js
+       applies this class after the initial pulse so the badge remains
+       visible but stops competing for visual attention.
+     • Epilepsy-safe block explicitly covers the three high-intensity
+       pulse elements called out in the Iteration 16 plan: the jackpot
+       amount, the mascot chest lights (cl1/cl2/cl3), and the power-
+       core ambient glow — plus the new `.lk-pulse-fast` luck pulse.
+
+   Iteration 14 (retained):
+     • Top-center drop-down toast container.
+     • `.chat-mini` floor of 180px + flex-shrink: 0 for mobile usability.
+     • Header `#storage-warning` memory-error badge.
+   ========================================================================== */
+
+/* ---------- Design Tokens ------------------------------------------------ */
+:root {
+  /* Brand colour ramp */
+  --red:         #e53935;
+  --red-dark:    #b71c1c;
+  --red-light:   #ff5252;
+  --yellow:      #fff176;
+  --yellow-sat:  #ffd600;
+  --green:       #69f0ae;
+  --green-dark:  #00c853;
+
+  /* Neutrals */
+  --bg:          #1a1a2e;
+  --bg2:         #16213e;
+  --bg3:         #0f3460;
+  --surface:     #1e2a45;
+  --surface2:    #253555;
+  --text:        #e8eaf6;
+  --text-dim:    #90a4ae;
+  --border:      rgba(229,57,53,0.35);
+
+  /* Glows + effects */
+  --glow-red:    0 0 12px rgba(229,57,53,0.70);
+  --glow-green:  0 0 12px rgba(105,240,174,0.70);
+  --glow-yell:   0 0 12px rgba(255,241,118,0.70);
+  --glow-power:  0 0 18px rgba(255,82,82,0.60),
+                 0 0 36px rgba(229,57,53,0.45);
+
+  /* Shape tokens */
+  --radius:      10px;
+  --radius-lg:   16px;
+
+  /* Typography */
+  --font-mono:   'Courier New', Courier, monospace;
+  --font-main:   'Segoe UI', system-ui, sans-serif;
+
+  /* Motion */
+  --trans:       0.2s ease;
+
+  /* Reel geometry — single source of truth for both CSS + JS */
+  --symbol-h:    80px;
+  --reel-rows:   3;
+  --reels-h:     calc(var(--symbol-h) * var(--reel-rows));
+
+  /* Power Core dimensions */
+  --core-size:   clamp(140px, 30vw, 180px);
+
+  /*
+   * Iteration 17 — Dynamic header height.
+   * Initial fallback value matches the default single-row header height.
+   * JavaScript (ui.js _updateHeaderHeight) reads the real header
+   * getBoundingClientRect().height on load, resize, and orientationchange,
+   * and writes the measured value back here so .toast-container always
+   * offsets from the *actual* rendered header regardless of wrapping.
+   */
+  --header-height:   62px;
+  --toast-top-gap:   10px;
+}
+
+/* ---------- Reset + Base ------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Off-screen SVG <filter> host element. */
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* Skip link */
+.skip-link {
+  position: absolute; top: -50px; left: 8px; z-index: 9999;
+  background: var(--red); color: #fff; padding: 8px 14px;
+  border-radius: var(--radius); font-weight: 700;
+  transition: top 0.2s;
+}
+.skip-link:focus { top: 8px; }
+
+/* ---------- Header ------------------------------------------------------ */
+.site-header {
+  background: var(--bg2);
+  border-bottom: 2px solid var(--border);
+  padding: 8px 16px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.5);
+}
+.header-inner {
+  max-width: 1400px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+}
+.logo-area  { display: flex; align-items: center; gap: 10px; }
+.logo-icon  { width: 40px; height: 40px; flex-shrink: 0; }
+.logo-text  {
+  font-family: var(--font-mono); font-size: 1.4rem;
+  font-weight: 900; letter-spacing: 2px;
+  color: var(--red); text-shadow: var(--glow-red);
+}
+.logo-3000  { color: var(--yellow); text-shadow: var(--glow-yell); }
+
+/* Iteration 14 — Incognito / private-mode "memory error" badge.
+   Shown when `State.isStorageAvailable()` returns false. The red
+   pulsing dot communicates "something is wrong" at a glance; the
+   hover tooltip explains the full consequence. */
+.storage-warning {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(229, 57, 53, 0.14);
+  border: 1px solid var(--red);
+  color: var(--red-light);
+  font-family: var(--font-mono); font-size: 0.72rem;
+  font-weight: 700; letter-spacing: 1px;
+  padding: 4px 10px; border-radius: 999px;
+  white-space: nowrap;
+  animation: storagePulse 2s ease-in-out infinite;
+}
+.storage-warning[hidden] { display: none; }
+/*
+  Iteration 16 — post-10s static state.
+  After ten seconds of pulsing, ui.js adds `.static` to freeze the
+  badge in a lower-intensity non-animated state. The badge remains
+  visible (so the player doesn't forget their session is ephemeral)
+  but stops competing with the jackpot and antenna pulses for
+  attention. A brief transition smooths the handover.
+*/
+.storage-warning.static {
+  animation: none;
+  opacity: 0.72;
+  box-shadow: none;
+  transition: opacity 0.6s ease, box-shadow 0.6s ease;
+}
+.storage-warning-icon {
+  width: 14px; height: 14px; flex-shrink: 0;
+  color: var(--red-light);
+}
+@keyframes storagePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.0); }
+  50%      { box-shadow: 0 0 12px 2px rgba(229, 57, 53, 0.45); }
+}
+
+.top-nav    { display: flex; gap: 6px; flex-wrap: wrap; }
+.nav-btn {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); padding: 6px 14px; border-radius: var(--radius);
+  cursor: pointer; font-size: 0.8rem; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase;
+  transition: background var(--trans), box-shadow var(--trans);
+}
+.nav-btn:hover,
+.nav-btn:focus-visible {
+  background: var(--red); box-shadow: var(--glow-red);
+  outline: none;
+}
+
+/* ---------- Game Layout ------------------------------------------------- */
+.game-layout {
+  max-width: 1400px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: 220px 1fr 240px;
+  gap: 16px; padding: 72px 16px 16px;
+  min-height: calc(100vh - 62px);
+  position: relative;
+}
+
+/* ---------- Background Particles (decorative) --------------------------- */
+.bg-particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.particle {
+  position: absolute; border-radius: 50%;
+  opacity: 0.07; animation: floatParticle linear infinite;
+}
+
+/* Original six circles */
+.p1 { width: 80px;  height: 80px;  background: var(--red);        left: 5%;  top: 20%; animation-duration: 22s; animation-delay:  -4s; }
+.p2 { width: 50px;  height: 50px;  background: var(--green);      left: 20%; top: 60%; animation-duration: 18s; animation-delay:  -9s; }
+.p3 { width: 120px; height: 120px; background: var(--yellow);     left: 75%; top: 10%; animation-duration: 30s; animation-delay:  -2s; }
+.p4 { width: 60px;  height: 60px;  background: var(--red);        left: 85%; top: 70%; animation-duration: 25s; animation-delay: -12s; }
+.p5 { width: 40px;  height: 40px;  background: var(--green);      left: 50%; top: 85%; animation-duration: 20s; animation-delay:  -6s; }
+.p6 { width: 90px;  height: 90px;  background: var(--yellow-sat); left: 40%; top: 40%; animation-duration: 35s; animation-delay: -17s; }
+
+/* Additional low-intensity shapes — hexagons (p7/p8) and soft orbs (p9/p10). */
+.p7 {
+  width: 28px; height: 28px; background: var(--green);
+  left: 30%; top: 28%;
+  opacity: 0.05; border-radius: 0;
+  clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  animation: floatDiag linear infinite;
+  animation-duration: 28s; animation-delay: -11s;
+}
+.p8 {
+  width: 38px; height: 38px; background: var(--red-light);
+  left: 68%; top: 52%;
+  opacity: 0.05; border-radius: 0;
+  clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  animation: floatDiag linear infinite;
+  animation-duration: 24s; animation-delay: -5s;
+}
+.p9  { width: 22px; height: 22px; background: var(--yellow);     left: 12%; top: 72%; opacity: 0.04; animation-duration: 16s; animation-delay: -13s; }
+.p10 { width: 60px; height: 60px; background: var(--green-dark); left: 88%; top: 32%; opacity: 0.04; animation-duration: 40s; animation-delay: -22s; }
+
+/* Subtle circuit-trace lines drifting across the bg (very low opacity). */
+.bg-trace {
+  position: absolute; pointer-events: none;
+  height: 1px; border-radius: 1px;
+  background: linear-gradient(90deg, transparent, rgba(105,240,174,0.25), transparent);
+  animation: traceScroll linear infinite;
+}
+.bt1 { width: 180px; left: 5%;  top: 35%; animation-duration: 14s; animation-delay:  -3s; }
+.bt2 { width: 120px; left: 55%; top: 62%; animation-duration: 19s; animation-delay:  -8s; }
+.bt3 { width: 220px; left: 25%; top: 80%; animation-duration: 24s; animation-delay: -15s; }
+
+@keyframes floatParticle {
+  0%,  100% { transform: translateY(0)     rotate(0deg); }
+  50%       { transform: translateY(-40px) rotate(180deg); }
+}
+@keyframes floatDiag {
+  0%   { transform: translate(0, 0)       rotate(0deg); }
+  33%  { transform: translate(18px,-28px) rotate(120deg); }
+  66%  { transform: translate(-12px,12px) rotate(240deg); }
+  100% { transform: translate(0, 0)       rotate(360deg); }
+}
+@keyframes traceScroll {
+  from { transform: translateX(-100%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  to   { transform: translateX(120vw);  opacity: 0; }
+}
+
+/* ---------- Left Panel (mascot + chat) ---------------------------------- */
+.panel-left {
+  display: flex; flex-direction: column; gap: 12px;
+  position: relative; z-index: 1;
+  /* Iteration 14: keep mascot visible at the top; chat-mini and
+     achievements-widget scroll independently below. */
+  min-width: 0;
+}
+
+/* Robot mascot — now a real <button>, so strip default button chrome. */
+.robot-mascot {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  font: inherit; color: inherit;
+  transition: box-shadow var(--trans), transform 0.1s;
+}
+.robot-mascot:hover       { box-shadow: var(--glow-red); }
+.robot-mascot:active      { transform: scale(0.97); }
+.robot-mascot:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+
+#robot-svg {
+  width: 100%; max-width: 140px; height: auto;
+  display: block; margin: 0 auto;
+  animation: robotBob 3.5s ease-in-out infinite;
+}
+@keyframes robotBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.antenna-ball { animation: antennaPulse 1.8s ease-in-out infinite; }
+@keyframes antennaPulse {
+  0%, 100% { fill: var(--yellow); filter: drop-shadow(0 0 2px var(--yellow)); }
+  50%      { fill: var(--red);    filter: drop-shadow(0 0 8px var(--red)); }
+}
+
+.eye-pupil { animation: eyeBlink 5s ease-in-out infinite; }
+@keyframes eyeBlink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  94%, 98%      { transform: scaleY(0.05); }
+}
+
+.cl1 { animation: chestLight 2.1s ease-in-out infinite; }
+.cl2 { animation: chestLight 2.1s ease-in-out infinite 0.7s; }
+.cl3 { animation: chestLight 2.1s ease-in-out infinite 1.4s; }
+@keyframes chestLight {
+  0%, 100% { opacity: 1;   filter: drop-shadow(0 0 4px currentColor); }
+  50%      { opacity: 0.3; filter: none; }
+}
+
+.robot-mascot.robot-excited #robot-svg { animation: robotShake 0.4s ease-in-out; }
+@keyframes robotShake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px) rotate(-4deg); }
+  40%      { transform: translateX(6px)  rotate(4deg); }
+  60%      { transform: translateX(-4px) rotate(-2deg); }
+  80%      { transform: translateX(4px)  rotate(2deg); }
+}
+.robot-mascot.robot-sad #robot-svg { animation: robotSad 0.6s ease-in-out; }
+@keyframes robotSad {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50%      { transform: translateY(4px) rotate(-3deg); }
+}
+.robot-mascot.robot-dance #robot-svg { animation: robotDance 0.5s steps(2) infinite; }
+@keyframes robotDance {
+  0%   { transform: rotate(-5deg) translateY(0); }
+  50%  { transform: rotate( 5deg) translateY(-4px); }
+  100% { transform: rotate(-5deg) translateY(0); }
+}
+
+/* Speech bubble */
+.robot-bubble {
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface2); border: 2px solid var(--green);
+  color: var(--green); font-family: var(--font-mono);
+  font-size: 0.72rem; padding: 6px 10px; border-radius: 8px;
+  max-width: 200px; white-space: normal;
+  text-align: center; box-shadow: var(--glow-green);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 10;
+  display: block;
+}
+.robot-bubble::after {
+  content: ''; position: absolute; top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--green);
+}
+.robot-bubble.visible { opacity: 1; }
+
+/* Mini chat */
+.chat-mini {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  display: flex; flex-direction: column;
+  /* Iteration 14: pin a floor so the chat doesn't collapse below a
+     usable height when the viewport is short. flex-shrink: 0 keeps
+     it from being squeezed when siblings (mascot, achievements) want
+     more room. */
+  min-height: 180px;
+  flex-shrink: 0;
+}
+.chat-messages {
+  /* Iteration 14: let the chat log grow to fill whatever the chat-mini
+     container gets, rather than hard-coding a fixed height that
+     conflicts with the new min-height rule. */
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow-y: auto; padding: 8px;
+  font-size: 0.75rem; display: flex; flex-direction: column; gap: 4px;
+}
+.chat-message {
+  background: var(--surface2); border-radius: 6px;
+  padding: 4px 8px; line-height: 1.4;
+}
+.chat-message.robot  { border-left: 3px solid var(--green);  color: var(--green); }
+.chat-message.player { border-left: 3px solid var(--yellow); color: var(--text); }
+
+.chat-form { display: flex; border-top: 1px solid var(--border); }
+.chat-form input {
+  flex: 1; background: transparent; border: none; color: var(--text);
+  padding: 7px 10px; font-size: 0.78rem; outline: none;
+  font-family: var(--font-mono);
+}
+.chat-form button {
+  background: var(--red); border: none; color: #fff;
+  padding: 0 12px; cursor: pointer; font-size: 1rem;
+  transition: background var(--trans);
+}
+.chat-form button:hover { background: var(--red-dark); }
+
+/* ---------- Slot Machine ------------------------------------------------ */
+.slot-machine-wrapper {
+  display: flex; align-items: flex-start; justify-content: center;
+  position: relative; z-index: 1;
+}
+.machine-frame {
+  background: linear-gradient(160deg, var(--surface) 0%, var(--bg2) 100%);
+  border: 3px solid var(--red);
+  border-radius: 24px;
+  padding: 20px;
+  width: 100%; max-width: 560px;
+  box-shadow: 0 0 40px rgba(229,57,53,0.30), inset 0 0 20px rgba(0,0,0,0.4);
+  display: flex; flex-direction: column; gap: 16px;
+  position: relative;
+}
+
+/* Win-flash overlay */
+.win-flash-overlay {
+  position: absolute; inset: 0; border-radius: 22px;
+  pointer-events: none; z-index: 20; opacity: 0;
+}
+.win-flash-overlay.flash-green { animation: flashGreen 0.8s ease-out forwards; }
+.win-flash-overlay.flash-gold  { animation: flashGold  1.0s ease-out forwards; }
+@keyframes flashGreen {
+  0%   { background: rgba(105,240,174,0.5); opacity: 1; }
+  100% { background: rgba(105,240,174,0);   opacity: 0; }
+}
+@keyframes flashGold {
+  0%   { background: rgba(255,214,0,0.6); opacity: 1; }
+  50%  { background: rgba(255,214,0,0.3); opacity: 0.6; }
+  100% { background: rgba(255,214,0,0);   opacity: 0; }
+}
+
+/* Lights bars */
+.lights-bar { display: flex; justify-content: space-around; align-items: center; }
+.light {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--red-dark);
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.4);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.lights-bar.active .light:nth-child(odd)  { background: var(--red);    box-shadow: var(--glow-red); }
+.lights-bar.active .light:nth-child(even) { background: var(--yellow); box-shadow: var(--glow-yell); }
+.lights-bar.win-lights .light             { animation: lightsCycle 0.25s linear infinite; }
+.lights-bar.win-lights .light:nth-child(odd)  { animation-delay: 0s; }
+.lights-bar.win-lights .light:nth-child(even) { animation-delay: 0.125s; }
+@keyframes lightsCycle {
+  0%, 100% { background: var(--red);    box-shadow: var(--glow-red); }
+  50%      { background: var(--yellow); box-shadow: var(--glow-yell); }
+}
+
+/* Jackpot figure */
+.jackpot-display {
+  text-align: center; font-family: var(--font-mono);
+  padding: 8px; background: var(--bg);
+  border: 2px solid var(--yellow-sat); border-radius: var(--radius);
+  box-shadow: var(--glow-yell);
+}
+.jackpot-label {
+  display: block; font-size: 0.7rem; letter-spacing: 3px;
+  color: var(--text-dim); margin-bottom: 2px;
+}
+.jackpot-amount {
+  font-size: 1.8rem; font-weight: 900;
+  color: var(--yellow); text-shadow: var(--glow-yell);
+  animation: jackpotPulse 2s ease-in-out infinite;
+  display: block;
+}
+@keyframes jackpotPulse {
+  0%, 100% { text-shadow: 0 0 8px  var(--yellow-sat); }
+  50%      { text-shadow: 0 0 24px var(--yellow-sat), 0 0 40px var(--yellow); }
+}
+
+/* Reels window: 5 columns × 3 rows */
+.reels-window {
+  display: flex; align-items: stretch;
+  background: #000; border: 3px solid var(--red-dark);
+  border-radius: var(--radius); overflow: hidden;
+  height: var(--reels-h);
+  position: relative;
+}
+.reels-window::before,
+.reels-window::after {
+  content: ''; position: absolute; left: 0; right: 0;
+  height: 1px; background: rgba(229,57,53,0.25);
+  z-index: 2; pointer-events: none;
+}
+.reels-window::before { top: calc(var(--symbol-h) * 1); }
+.reels-window::after  { top: calc(var(--symbol-h) * 2); }
+
+.reel-container {
+  flex: 1; height: 100%; overflow: hidden; position: relative;
+  min-width: 0;
+}
+.reel-strip {
+  display: flex; flex-direction: column; align-items: center;
+  will-change: transform, filter;
+  transition: transform 0s;
+}
+
+/* ── Motion-blur states (rAF-driven animation, Iteration 12) ─────────
+   Transform is driven frame-by-frame by requestAnimationFrame in
+   uiReels.js. These classes control only filter + opacity — they
+   transition naturally via CSS while rAF owns the translateY.
+
+   .is-spinning      : heavy CSS blur + opacity dip (strip at full speed)
+   .is-decelerating  : light blur as strip nears its target stop
+   .is-settling      : no blur; overshoot + bounce-back phase
+   -------------------------------------------------------------------- */
+.reel-strip.is-spinning {
+  filter: blur(2px);
+  opacity: 0.80;
+  transition: filter 0.15s ease-out, opacity 0.15s ease-out;
+}
+.reel-strip.is-decelerating {
+  filter: blur(0.6px);
+  opacity: 0.95;
+  transition: filter 0.12s ease-out, opacity 0.12s ease-out;
+}
+.reel-strip.is-settling {
+  filter: none;
+  opacity: 1;
+  transition: filter 0.08s ease-out, opacity 0.08s ease-out;
+}
+
+.reel-divider {
+  width: 3px; height: 100%; background: var(--red-dark); flex-shrink: 0;
+}
+.reel-symbol {
+  width: 100%; height: var(--symbol-h);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.reel-symbol svg { width: 56px; height: 56px; }
+
+.payline {
+  position: absolute;
+  top: var(--symbol-h); left: 0; right: 0;
+  height: var(--symbol-h);
+  background: rgba(255,241,118,0.05);
+  border-top:    2px solid rgba(255,241,118,0.45);
+  border-bottom: 2px solid rgba(255,241,118,0.45);
+  pointer-events: none; z-index: 1;
+}
+
+/* Luck warmup indicator — row of 5 circuit-node dots.
+   No label so the pity threshold is not directly readable by the player.
+
+   Iteration 16 — colour scheme changed from three-band (green/yellow/red)
+   to a single dull-grey → glowing-neon-orange gradient. Rationale:
+     • Removes the implicit "you're nearly there" hot-red signal that
+       Iteration 15 still leaked on the last band.
+     • Orange is a warmer, more magnetic cue without reading as "alarm".
+     • When within 2 spins of the pity threshold, nodes add a fast non-
+       linear pulse (`.lk-pulse-fast`) to create subtle anticipatory
+       momentum — felt rather than read.
+   The base state is deliberately low-contrast so the indicator fades
+   into ambient machine chrome when the player is winning regularly. */
+.luck-indicator {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 2px 0;
+}
+.luck-node {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  /* Base state — dull grey (#90a4ae @ low alpha) blends into chrome. */
+  background: rgba(144, 164, 174, 0.18);
+  border: 1px solid rgba(144, 164, 174, 0.30);
+  transition: background 0.55s ease, border-color 0.55s ease, box-shadow 0.55s ease;
+}
+/* Active nodes fade toward glowing neon orange (#ff9100). A single
+   class `.lk-active` takes care of "filled" — the brightness scales via
+   CSS custom property so ui.js can pass a 0→1 intensity if desired. */
+.luck-node.lk-active {
+  background: rgba(255, 145, 0, 0.75);
+  border-color: rgba(255, 145, 0, 0.90);
+  box-shadow: 0 0 6px rgba(255, 145, 0, 0.55);
+}
+/* Within 2 spins of the pity threshold — non-linear fast pulse. The
+   easing is deliberately asymmetric (sharp attack, slow decay) so the
+   pulse reads as "building pressure" rather than a neutral blink. */
+.luck-node.lk-pulse-fast {
+  animation: luckPulseFast 0.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+@keyframes luckPulseFast {
+  0%   { box-shadow: 0 0 6px  rgba(255, 145, 0, 0.55); transform: scale(1); }
+  15%  { box-shadow: 0 0 14px rgba(255, 145, 0, 0.95); transform: scale(1.35); }
+  60%  { box-shadow: 0 0 8px  rgba(255, 145, 0, 0.65); transform: scale(1.05); }
+  100% { box-shadow: 0 0 6px  rgba(255, 145, 0, 0.55); transform: scale(1); }
+}
+
+/* Near-miss + result live regions */
+.near-miss-bar {
+  min-height: 24px; text-align: center;
+  font-family: var(--font-mono); font-size: 0.85rem;
+  color: var(--yellow); opacity: 0;
+  transition: opacity 0.3s;
+  background: rgba(0,0,0,0.65);
+  border-radius: 20px; padding: 3px 16px;
+}
+.near-miss-bar.visible { opacity: 1; }
+.result-display {
+  text-align: center; font-family: var(--font-mono);
+  font-size: 1rem; min-height: 28px;
+  color: var(--green); font-weight: 700;
+  background: rgba(0,0,0,0.65);
+  border-radius: 20px; padding: 4px 16px;
+}
+
+/* Coin burst */
+.coin-burst {
+  position: absolute; top: 30%; left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none; z-index: 25;
+}
+.coin {
+  position: absolute; width: 24px; height: 24px;
+  border-radius: 50%; background: var(--yellow-sat);
+  border: 2px solid var(--yellow);
+  font: 900 12px/1 var(--font-mono); color: var(--red-dark);
+  display: flex; align-items: center; justify-content: center;
+  animation: coinFly 1s ease-out forwards;
+}
+@keyframes coinFly {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  80%  { opacity: 0.8; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0.5) rotate(720deg); opacity: 0; }
+}
+
+/* Bet controls — now a <fieldset>. Reset the default browser look. */
+.bet-controls {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  border: none; padding: 0; margin: 0;
+}
+.bet-label {
+  font-family: var(--font-mono); font-size: 0.75rem;
+  letter-spacing: 2px; color: var(--text-dim);
+  padding: 0;
+}
+.bet-buttons { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.bet-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 6px 12px; border-radius: var(--radius);
+  cursor: pointer; font-family: var(--font-mono); font-size: 0.85rem;
+  font-weight: 700; transition: all var(--trans);
+  min-width: 48px;
+}
+.bet-btn:hover, .bet-btn:focus-visible {
+  background: var(--surface); border-color: var(--red); outline: none;
+}
+.bet-btn.active {
+  background: var(--red); border-color: var(--red);
+  box-shadow: var(--glow-red); color: #fff;
+}
+
+/* ==========================================================================
+   POWER CORE — the mechanical lever / spin button
+   Layered concentric rings + a luminescent face. Pure CSS.
+   ========================================================================== */
+.power-core {
+  position: relative;
+  width: var(--core-size); height: var(--core-size);
+  margin: 14px auto 6px;
+  background: transparent; border: none; padding: 0;
+  cursor: pointer; outline: none;
+  font: inherit; color: inherit;
+  display: grid; place-items: center;
+  transition: transform 0.1s ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Concentric rings positioned absolutely inside the button. */
+.power-core-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  pointer-events: none;
+}
+.power-core .ring-outer {
+  box-shadow:
+    0 0 0 6px var(--red-dark),
+    0 0 0 12px rgba(229,57,53,0.25),
+    0 8px 32px rgba(0,0,0,0.6);
+  background: radial-gradient(circle at 30% 30%, #3a2e3e, #1a1a2e 70%);
+}
+.power-core .ring-middle {
+  inset: 16px; background: radial-gradient(circle, var(--red-dark) 0%, var(--bg2) 100%);
+  box-shadow: inset 0 0 18px rgba(0,0,0,0.7);
+}
+.power-core .ring-inner {
+  inset: 26px;
+  background: radial-gradient(circle at 35% 35%, var(--red-light), var(--red) 55%, var(--red-dark));
+  box-shadow: inset 0 4px 14px rgba(255,255,255,0.18),
+              inset 0 -6px 18px rgba(0,0,0,0.45);
+}
+
+/* Core body — holds the face/glyph. */
+.power-core-body {
+  position: relative; z-index: 2;
+  width: 60%; height: 60%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #ff8e85 0%, var(--red-light) 35%, var(--red-dark) 100%);
+  display: grid; place-items: center;
+  box-shadow: inset 0 4px 12px rgba(255,255,255,0.25),
+              inset 0 -6px 14px rgba(0,0,0,0.35);
+}
+.power-core-face {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  pointer-events: none;
+}
+.power-core-icon { width: 38%; max-width: 44px; height: auto; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
+.power-core-label {
+  font-family: var(--font-mono); font-size: 1.1rem;
+  font-weight: 900; letter-spacing: 3px; color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+
+/* Ambient glow halo — animated (Iteration 09: reduced visual noise).
+   Opacity range tightened and scale reduced so the pulse is present
+   but no longer dominates the visual field. */
+.power-core-glow {
+  position: absolute; inset: -18px; border-radius: 50%;
+  pointer-events: none; z-index: 0;
+  box-shadow: var(--glow-power);
+  animation: corePulse 2.4s ease-in-out infinite;
+}
+@keyframes corePulse {
+  0%, 100% { opacity: 0.35; transform: scale(1);    }
+  50%      { opacity: 0.60; transform: scale(1.03); }
+}
+
+/* :hover — brighter corona + slight lift. */
+.power-core:hover:not(:disabled) { transform: translateY(-2px) scale(1.03); }
+.power-core:hover:not(:disabled) .power-core-glow {
+  box-shadow: 0 0 28px rgba(255,82,82,0.75), 0 0 60px rgba(229,57,53,0.55);
+}
+.power-core:hover:not(:disabled) .ring-inner {
+  background: radial-gradient(circle at 35% 35%, #ffb3ad, var(--red-light) 55%, var(--red));
+}
+
+/* :active — depressed, inner glow intensifies. */
+.power-core:active:not(:disabled)       { transform: translateY(2px) scale(0.95); }
+.power-core:active:not(:disabled) .ring-inner {
+  box-shadow:
+    inset 0 -4px 14px rgba(255,255,255,0.25),
+    inset 0  6px 18px rgba(0,0,0,0.55);
+}
+.power-core:active:not(:disabled) .power-core-body {
+  box-shadow: inset 0 6px 18px rgba(0,0,0,0.45),
+              inset 0 -2px 8px rgba(255,255,255,0.15),
+              0 0 22px var(--red-light);
+}
+
+/* :focus-visible — keyboard ring. */
+.power-core:focus-visible { outline: 3px solid var(--yellow); outline-offset: 10px; border-radius: 50%; }
+
+/* :disabled — locked during spin (also gets .is-spinning below). */
+.power-core:disabled { cursor: not-allowed; }
+.power-core:disabled .power-core-glow { animation: none; opacity: 0.35; }
+.power-core:disabled .power-core-body { filter: saturate(0.6) brightness(0.85); }
+
+/* .is-spinning — core "engaged", inner face rotates. */
+.power-core.is-spinning .power-core-icon { animation: coreSpin 0.65s linear infinite; }
+.power-core.is-spinning .ring-middle     { animation: ringCounter 1.2s linear infinite; }
+@keyframes coreSpin    { to { transform: rotate(360deg); } }
+@keyframes ringCounter {
+  from { box-shadow: inset 0 0 18px rgba(0,0,0,0.7), 0 0 0 0 rgba(255,82,82,0.7); }
+  to   { box-shadow: inset 0 0 18px rgba(0,0,0,0.7), 0 0 0 14px rgba(255,82,82,0); }
+}
+
+/* Machine stat row — balance / winnings / rank side-by-side */
+.machine-stat-row {
+  display: flex; gap: 8px;
+}
+
+/* Shared base for all three stat figures */
+.balance-display,
+.winnings-display,
+.rank-display {
+  flex: 1; text-align: center; font-family: var(--font-mono);
+  padding: 8px 6px; background: var(--bg);
+  border-radius: var(--radius);
+}
+
+/* Winnings figure */
+.winnings-display {
+  border: 2px solid var(--green);
+  box-shadow: var(--glow-green);
+}
+.winnings-label {
+  display: block; font-size: 0.60rem; letter-spacing: 2px;
+  color: var(--text-dim); margin-bottom: 2px;
+}
+.winnings-amount {
+  font-size: 1.2rem; font-weight: 900;
+  color: var(--green); text-shadow: var(--glow-green);
+  display: block;
+}
+.winnings-amount.bump { animation: winsBump 0.4s ease-out; }
+@keyframes winsBump {
+  0%   { transform: scale(1);   color: var(--green); }
+  40%  { transform: scale(1.25); color: var(--yellow-sat); }
+  100% { transform: scale(1);   color: var(--green); }
+}
+
+/* Balance figure */
+.balance-display {
+  border: 2px solid var(--yellow-sat);
+}
+.balance-display.balance-low {
+  border-color: var(--red); box-shadow: var(--glow-red);
+}
+.balance-label {
+  display: block; font-size: 0.60rem; letter-spacing: 2px;
+  color: var(--text-dim); margin-bottom: 2px;
+}
+.balance-amount {
+  font-size: 1.2rem; font-weight: 900;
+  color: var(--yellow); display: block;
+}
+.balance-display.balance-low .balance-amount { color: var(--red); }
+.balance-amount.bump { animation: winsBump 0.4s ease-out; }
+
+/* Rank figure */
+.rank-display {
+  border: 2px solid var(--border);
+}
+.rank-label {
+  display: block; font-size: 0.60rem; letter-spacing: 2px;
+  color: var(--text-dim); margin-bottom: 2px;
+}
+.rank-amount {
+  font-size: 1rem; font-weight: 900;
+  color: var(--text-dim); display: block;
+}
+.rank-amount.ranked { color: var(--green); text-shadow: var(--glow-green); }
+
+/* ---------- Left Panel — achievements overflow management -------------- */
+.panel-left {
+  align-self: start;    /* don't stretch to grid row height */
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+}
+
+/* Achievements widget inside left panel — compact grid */
+.panel-left .achievements-widget {
+  flex-shrink: 0;
+}
+.panel-left .achievements-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ---------- Right Panel (leaderboard + stats) ------------------- */
+.panel-right {
+  display: flex; flex-direction: column; gap: 12px;
+  position: relative; z-index: 1;
+  align-self: start;
+}
+.widget-title {
+  font-family: var(--font-mono); font-size: 0.72rem;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 8px;
+  border-bottom: 1px solid var(--border); padding-bottom: 4px;
+}
+
+.leaderboard-widget,
+.stats-widget,
+.achievements-widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.leaderboard-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.leaderboard-list.full { gap: 8px; }
+
+.lb-entry {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border-radius: 6px; padding: 6px 8px;
+  font-family: var(--font-mono); font-size: 0.78rem;
+  border-left: 3px solid transparent;
+  animation: lbEntryFade 0.4s ease-out;
+}
+@keyframes lbEntryFade { from { opacity: 0; transform: translateX(10px); } }
+.lb-rank          { color: var(--text-dim); min-width: 20px; font-weight: 700; }
+.lb-rank.top1     { color: var(--yellow); }
+.lb-rank.top2     { color: var(--text); }
+.lb-rank.top3     { color: var(--red-light); }
+.lb-avatar        { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
+.lb-name          { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-amount        { color: var(--green); font-weight: 700; }
+.lb-entry.is-player { border-left-color: var(--green); }
+
+/* Stats */
+.stats-list { display: flex; flex-direction: column; gap: 6px; }
+.stat-row {
+  display: flex; justify-content: space-between;
+  font-size: 0.82rem; padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.stat-row dt { color: var(--text-dim); }
+.stat-row dd { color: var(--green); font-family: var(--font-mono); font-weight: 700; }
+
+/* Achievements */
+.achievements-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.ach-badge {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px; text-align: center;
+  font-size: 0.62rem; color: var(--text-dim);
+  transition: all var(--trans); cursor: default;
+  position: relative;
+}
+.ach-badge.unlocked {
+  border-color: var(--yellow-sat); color: var(--yellow);
+  box-shadow: 0 0 8px rgba(255,214,0,0.3);
+}
+.ach-badge svg { width: 24px; height: 24px; display: block; margin: 0 auto 3px; }
+.ach-badge:hover .ach-tooltip { opacity: 1; pointer-events: auto; }
+.ach-tooltip {
+  position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg); border: 1px solid var(--yellow-sat);
+  color: var(--text); font-size: 0.68rem; padding: 5px 8px;
+  border-radius: 6px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  z-index: 50;
+}
+
+/* ---------- Payout Table ------------------------------------------------- */
+.payout-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-mono); font-size: 0.82rem;
+}
+.payout-table th {
+  color: var(--text-dim); letter-spacing: 2px; font-size: 0.68rem;
+  padding: 6px 4px; text-align: center;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+}
+.payout-table th:first-child { text-align: left; padding-left: 0; }
+.payout-table td {
+  padding: 7px 4px; text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--green);
+}
+.payout-table td:first-child { text-align: left; padding-left: 0; }
+.pt-sym-cell {
+  display: flex; align-items: center; gap: 8px;
+}
+.pt-sym-icon { width: 36px; height: 36px; flex-shrink: 0; }
+.pt-sym-label { color: var(--text); font-weight: 700; font-size: 0.78rem; }
+.pt-jp  { color: var(--yellow); font-weight: 700; }
+.pt-nil { color: var(--text-dim); }
+
+/* ---------- Slide-over Panels ------------------------------------------- */
+.panel-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 200; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.panel-overlay.active { opacity: 1; pointer-events: auto; }
+
+.slide-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(400px, 95vw); background: var(--bg2);
+  border-left: 2px solid var(--border);
+  padding: 24px; z-index: 201;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-panel.wide { width: min(520px, 95vw); }
+.slide-panel:not([hidden]) { transform: translateX(0); }
+.slide-panel[hidden] { display: block !important; transform: translateX(100%); }
+
+.panel-close {
+  position: absolute; top: 16px; right: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); width: 32px; height: 32px; border-radius: 50%;
+  cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--trans);
+}
+.panel-close:hover { background: var(--red); }
+
+.slide-panel h2 {
+  font-family: var(--font-mono); font-size: 1.1rem;
+  color: var(--red); margin-bottom: 20px; letter-spacing: 2px;
+}
+.slide-panel h3 {
+  font-family: var(--font-mono); font-size: 0.8rem;
+  color: var(--text-dim); letter-spacing: 2px; margin-bottom: 10px;
+}
+
+.settings-group { margin-bottom: 20px; border: none; padding: 0; }
+.settings-hint  { font-size: 0.78rem; color: var(--text-dim); margin: 6px 0 10px; line-height: 1.4; }
+
+.toggle-label {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.9rem; margin-bottom: 10px; cursor: pointer;
+}
+.toggle-label input[type="checkbox"] {
+  width: 18px; height: 18px; accent-color: var(--red);
+}
+.range-label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-size: 0.85rem; margin-bottom: 12px;
+}
+.range-label input[type="range"] { accent-color: var(--red); width: 100%; }
+
+/* Avatar */
+.avatar-row { display: flex; flex-direction: column; gap: 10px; }
+.avatar-row label { font-size: 0.85rem; display: flex; flex-direction: column; gap: 5px; }
+.avatar-row input[type="text"] {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); padding: 6px 10px; border-radius: 6px;
+  font-family: var(--font-mono); font-size: 0.9rem; outline: none;
+}
+.avatar-row input[type="text"]:focus { border-color: var(--red); }
+.avatar-colors { display: flex; gap: 8px; margin-top: 4px; }
+.avatar-color-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid transparent; cursor: pointer;
+  transition: border-color var(--trans), transform 0.1s;
+}
+.avatar-color-btn:hover    { transform: scale(1.15); }
+.avatar-color-btn.selected { border-color: #fff; }
+
+/* Danger button (data reset) */
+.danger-btn {
+  background: var(--red-dark); border: 1px solid var(--red);
+  color: #fff; padding: 8px 14px; border-radius: var(--radius);
+  cursor: pointer; font-family: var(--font-mono); font-size: 0.82rem;
+  font-weight: 700; letter-spacing: 1px;
+  transition: background var(--trans);
+}
+.danger-btn:hover { background: var(--red); }
+
+/* Chat room */
+.chat-room-messages {
+  height: 340px; overflow-y: auto; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px; margin-bottom: 10px;
+  display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem;
+}
+.chat-room-msg {
+  background: var(--surface2); border-radius: 6px; padding: 6px 10px;
+  line-height: 1.5;
+}
+.chat-room-msg .msg-author { font-weight: 700; color: var(--red); margin-right: 6px; }
+.chat-room-msg.robot-msg .msg-author { color: var(--green); }
+
+.chat-room-form { display: flex; gap: 8px; }
+.chat-room-form input {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); padding: 8px 12px; border-radius: 6px;
+  font-size: 0.85rem; outline: none;
+}
+.chat-room-form input:focus { border-color: var(--red); }
+.chat-room-form button {
+  background: var(--red); border: none; color: #fff;
+  padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 700;
+  transition: background var(--trans);
+}
+.chat-room-form button:hover { background: var(--red-dark); }
+
+/* ---------- Full-screen Win Celebration --------------------------------- */
+.win-celebration {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 300; text-align: center; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s;
+}
+.win-celebration.visible { opacity: 1; }
+.win-amount-display {
+  font-family: var(--font-mono); font-size: 5rem; font-weight: 900;
+  color: var(--yellow);
+  text-shadow: 0 0 30px var(--yellow-sat), 0 0 60px var(--yellow);
+  animation: winAmountPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  line-height: 1;
+}
+.win-label-display {
+  font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700;
+  color: var(--green); letter-spacing: 4px; margin-top: 8px;
+  text-shadow: var(--glow-green);
+  animation: winAmountPop 0.5s 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+@keyframes winAmountPop {
+  0%   { transform: scale(0.2); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+/* ---------- Toast Notifications (Iteration 17 — priority queue) --------- */
+/*
+  Iteration 17 replaces the previous FIFO 3-toast cap with a full priority
+  queue (ToastManager module). Key CSS changes:
+
+  1. `.toast-container` top now uses `calc(var(--header-height) + var(--toast-top-gap))`
+     instead of a hardcoded `72px`. The `--header-height` CSS variable is
+     written by `_updateHeaderHeight()` in ui.js on every resize /
+     orientationchange, so the container always clears the real header even
+     when the nav wraps to a second line on mid-range tablets (780–1100px).
+
+  2. Per-priority border colours (.toast-p1 through .toast-p4) give players
+     an instant visual signal of notification importance without requiring
+     them to read the text first.
+
+  3. Stacking direction remains top-down (column) — oldest visible toast at
+     top, newest below, reading naturally downward.
+*/
+.toast-container {
+  position: fixed;
+  /* Dynamic offset: JS keeps --header-height current; CSS var is the fallback. */
+  top: calc(var(--header-height) + var(--toast-top-gap));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 400;
+  display: flex; flex-direction: column; gap: 8px;
+  align-items: center; pointer-events: none;
+  width: max-content; max-width: 92vw;
+}
+
+/* ── Base toast style ── */
+.toast {
+  background: var(--surface2);
+  border: 1px solid var(--yellow-sat);
+  color: var(--yellow);
+  font-family: var(--font-mono); font-size: 0.80rem;
+  padding: 8px 14px; border-radius: var(--radius);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), var(--glow-yell);
+  display: flex; align-items: center; gap: 10px;
+  max-width: min(380px, 90vw);
+  pointer-events: none;
+  animation: toastDropIn 0.3s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+}
+.toast.toast-out {
+  animation: toastDropOut 0.3s ease-in forwards;
+}
+.toast-icon { font-size: 1.05rem; flex-shrink: 0; color: var(--yellow-sat); }
+.toast-body { flex: 1 1 auto; line-height: 1.3; }
+
+/*
+  ── Per-priority visual variants ────────────────────────────────────────
+  ToastManager adds .toast-p1/.toast-p2/.toast-p3/.toast-p4 classes that
+  correspond to PRIORITY.ACHIEVEMENT / BONUS / BIG_WIN / JACKPOT.
+  Each tier uses a distinct border colour and icon tint so players can
+  immediately distinguish a jackpot notification from an achievement.
+*/
+
+/* Priority 1 — Achievement (default yellow, already covered by .toast base) */
+.toast.toast-p1 {
+  border-color: var(--yellow-sat);
+  color: var(--yellow);
+}
+.toast.toast-p1 .toast-icon { color: var(--yellow-sat); }
+
+/* Priority 2 — Bonus Trigger (green accent) */
+.toast.toast-p2 {
+  border-color: var(--green-dark);
+  color: var(--green);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), var(--glow-green);
+}
+.toast.toast-p2 .toast-icon { color: var(--green); }
+
+/* Priority 3 — Big Win (bright yellow/gold with stronger glow) */
+.toast.toast-p3 {
+  border-color: var(--yellow-sat);
+  color: var(--yellow);
+  background: #2a2e1a;   /* warm dark background to reinforce the gold theme */
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.7),
+              0 0 16px rgba(255, 214, 0, 0.5);
+}
+.toast.toast-p3 .toast-icon { color: var(--yellow-sat); font-size: 1.15rem; }
+
+/* Priority 4 — Jackpot (red/gold dramatic treatment) */
+.toast.toast-p4 {
+  border-color: var(--red);
+  color: var(--yellow);
+  background: #2a1a1a;   /* warm dark red-tinged background */
+  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.8),
+              0 0 20px rgba(229, 57, 53, 0.55),
+              0 0 40px rgba(255, 214, 0, 0.25);
+  font-size: 0.88rem;    /* slightly larger for maximum legibility */
+  font-weight: 700;
+}
+.toast.toast-p4 .toast-icon { color: var(--red-light); font-size: 1.2rem; }
+
+/* Drop in from above, settle at resting position. */
+@keyframes toastDropIn {
+  from { transform: translateY(-120%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+/* Drop back out upward so multiple toasts don't visually swap axes. */
+@keyframes toastDropOut {
+  from { transform: translateY(0);     opacity: 1; }
+  to   { transform: translateY(-120%); opacity: 0; }
+}
+
+body[data-reducedmotion="true"] .toast,
+body[data-reducedmotion="true"] .toast.toast-out {
+  animation: none !important;
+  transform: none !important;
+}
+
+/* ---------- Accessibility overrides ------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+body[data-reducedmotion="true"] *,
+body[data-reducedmotion="true"] *::before,
+body[data-reducedmotion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+}
+/* Epilepsy-safe: disable flashing, pulsing, and high-intensity motion.
+   The selector list is intentionally broad — every animated element that
+   produces repetitive light changes or rapid motion is covered here.
+
+   Elements already suppressed in JS (flash overlay, coins) are also listed
+   for defence-in-depth if the JS guard ever fails.
+
+/* ---------- Epilepsy-safe mode ----------------------------------------
+   When body[data-epilepsysafe="true"], disable all rapid-flash and
+   pulsing animations across the interface.
+
+   Iteration 16 — mandate groups 4 and 5.
+   This selector list explicitly covers the three high-intensity pulse
+   elements called out in the Iteration 16 plan:
+     1. .jackpot-amount     — the big currency figure's glow pulse.
+     2. .cl1 / .cl2 / .cl3  — the robot mascot's chest lights.
+     3. .power-core-glow    — the spin button's ambient halo.
+   Plus the broader coverage retained from earlier iterations (coin
+   burst, lights bar, win-flash overlay, trace lines, particles,
+   antenna ball, and the storage-warning badge's pulse).
+
+   Two exceptions preserved in epilepsy mode:
+     • Win celebration overlay — fades in gently (replaced animation below).
+     • Lights-bar "active" state on spin — solid colour, not cycling. */
+body[data-epilepsysafe="true"] .win-flash-overlay,
+body[data-epilepsysafe="true"] .lights-bar.win-lights .light,
+body[data-epilepsysafe="true"] .power-core-glow,
+body[data-epilepsysafe="true"] .power-core .ring-middle,
+body[data-epilepsysafe="true"] .jackpot-amount,
+body[data-epilepsysafe="true"] .particle,
+body[data-epilepsysafe="true"] .bg-trace,
+body[data-epilepsysafe="true"] .antenna-ball,
+body[data-epilepsysafe="true"] .eye-pupil,
+body[data-epilepsysafe="true"] .cl1,
+body[data-epilepsysafe="true"] .cl2,
+body[data-epilepsysafe="true"] .cl3,
+body[data-epilepsysafe="true"] #robot-svg,
+body[data-epilepsysafe="true"] .robot-mascot.robot-dance  #robot-svg,
+body[data-epilepsysafe="true"] .robot-mascot.robot-excited #robot-svg,
+body[data-epilepsysafe="true"] .robot-mascot.robot-sad    #robot-svg,
+body[data-epilepsysafe="true"] .coin,
+body[data-epilepsysafe="true"] .storage-warning,
+body[data-epilepsysafe="true"] .luck-node.lk-pulse-fast,
+body[data-epilepsysafe="true"] .power-core.is-spinning .power-core-icon,
+body[data-epilepsysafe="true"] .power-core.is-spinning .ring-middle {
+  animation: none !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Win celebration: replace aggressive scale-pop with a gentle fade in epilepsy mode. */
+@keyframes winFadeInSafe {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+body[data-epilepsysafe="true"] .win-amount-display,
+body[data-epilepsysafe="true"] .win-label-display {
+  animation: winFadeInSafe 0.45s ease forwards !important;
+}
+
+/* ---------- Scrollbar --------------------------------------------------- */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--red-dark); border-radius: 3px; }
+
+/* ---------- Responsive -------------------------------------------------- */
+@media (max-width: 1100px) {
+  .game-layout { grid-template-columns: 200px 1fr; }
+  .panel-right { display: none; }
+}
+
+/*
+  Iteration 17 — Mid-range tablet layout (780px – 1100px).
+
+  At this width the header's flex row may wrap the nav buttons onto a second
+  line, increasing header height from ~62px to ~110px+. The old approach used
+  a hardcoded `top: 128px` in the ≤780px breakpoint — a best-guess that was
+  wrong for any screen between 780px and 1100px where wrapping can also occur.
+
+  Fix: the `--header-height` CSS variable is measured and updated by
+  `_updateHeaderHeight()` in ui.js on every resize/orientationchange event.
+  `.toast-container` always computes its top from `--header-height`, so no
+  per-breakpoint override is needed. The CSS variable fallback of 62px is safe
+  for desktop (single-row header); JS corrects it before the first spin can
+  produce a toast (boot delay is 600ms, plenty of time for measurement).
+
+  We still set a safe CSS-only fallback here for the tablet breakpoint in case
+  JS is blocked or very slow. 110px is conservative enough to clear a wrapped
+  two-row header on most devices.
+*/
+@media (min-width: 781px) and (max-width: 1100px) {
+  :root { --header-height: 110px; }
+}
+
+@media (max-width: 780px) {
+  .game-layout  { grid-template-columns: 1fr; padding: 72px 10px 10px; }
+  /* Iteration 14: keep the left panel as a vertical stack on mobile so
+     the mascot → chat → achievements reading order is preserved. Remove
+     the desktop overflow cap since there's no horizontal room for a
+     fixed side column. */
+  .panel-left   { flex-direction: column; max-height: none; overflow-y: visible; }
+  /* Chat-mini keeps its min-height (set globally) — this ensures it
+     remains usable on phones instead of collapsing. */
+  .machine-frame { max-width: 100%; }
+  .machine-stat-row { gap: 5px; }
+  .balance-amount, .winnings-amount, .rank-amount { font-size: 1rem; }
+
+  /*
+    Iteration 17: removed the old hardcoded `top: 128px` override.
+    `.toast-container` uses `calc(var(--header-height) + var(--toast-top-gap))`
+    globally. On narrow screens the header wraps to ~128px and JS measures
+    that exact value into `--header-height`. The CSS-only fallback for this
+    breakpoint is set below as a safe starting value before JS can run.
+  */
+  :root { --header-height: 128px; }
+  .toast { font-size: 0.76rem; padding: 8px 14px; }
+}
+@media (max-width: 480px) {
+  .logo-text  { font-size: 1rem; }
+  .power-core { --core-size: 130px; }
+  .panel-left { flex-direction: column; }
+  .bet-buttons { gap: 4px; }
+  .bet-btn     { padding: 5px 8px; font-size: 0.78rem; min-width: 42px; }
+  /* The storage badge's label can wrap on very narrow screens — hide
+     it and lean on the icon alone plus hover/title for context. */
+  .storage-warning-label { display: none; }
+  .storage-warning { padding: 4px 6px; }
+}
