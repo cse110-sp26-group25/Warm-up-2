@@ -12,7 +12,7 @@
 | Chan Han | [Personal Research](/plan/raw-research/personal%20research/ChanHanResearch.md) |
 | John Hermosura | [Personal Research](/plan/raw-research/personal%20research/jHermosuraResearch.md) |
 | Jordan Tran | [Personal Research](/plan/raw-research/personal%20research/JordanTranResearch.md) |
-| Hojoon Kim | Present |
+| Hojoon Kim | [Personal Research](/plan/raw-research/personal%20research/hojoon_research.md) |
 
 
 ## Research Overview 
