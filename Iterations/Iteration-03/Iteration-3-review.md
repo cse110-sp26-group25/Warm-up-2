@@ -34,7 +34,7 @@
 4. The resizing is okay. The compenents do move to a vertical layout when zooming in, and seperate when zooming out.
 5. The icons have move away from emoji's and are thematically appropriate.
 6. The volume slider does work.
-7. You can chat with the robot. It's reponces make sence 80% of the time. 
+7. You can chat with the robot. It's responces make sense 80% of the time. 
 
 #### Good back end
 1.
