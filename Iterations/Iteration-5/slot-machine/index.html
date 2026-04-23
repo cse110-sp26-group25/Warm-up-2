@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lucky Reels — Slot Machine</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="bg-canvas" aria-hidden="true"></div>
+
+  <header role="banner">
+    <h1 id="game-title">Lucky Reels</h1>
+    <div id="jackpot-banner" role="status" aria-live="polite" aria-atomic="true">
+      <span class="jackpot-label">Progressive Jackpot</span>
+      <span id="jackpot-amount">$10,000</span>
+    </div>
+  </header>
+
+  <main role="main">
+    <!-- Player Info Bar -->
+    <section id="player-section" aria-label="Player information">
+      <div class="player-field">
+        <label for="player-name-input" class="field-label">Player</label>
+        <input
+          type="text"
+          id="player-name-input"
+          placeholder="Your name…"
+          maxlength="20"
+          aria-label="Player name"
+          autocomplete="off"
+        />
+      </div>
+      <div class="player-field">
+        <span class="field-label">Credits</span>
+        <span id="credits-display" aria-live="polite" aria-label="Credits remaining">1000</span>
+      </div>
+      <div class="player-field">
+        <span class="field-label">Last Win</span>
+        <span id="last-win-display" aria-live="polite" aria-label="Last win amount">—</span>
+      </div>
+    </section>
+
+    <!-- Slot Machine Cabinet -->
+    <section id="slot-machine" aria-label="Slot machine reels">
+      <!-- Payline markers -->
+      <div class="payline-bar" id="payline-top" aria-hidden="true">
+        <span class="payline-pip"></span><span class="payline-pip"></span><span class="payline-pip"></span>
+      </div>
+
+      <div id="reels-container" role="img" aria-label="Three slot machine reels">
+        <div class="reel-wrapper" id="reel-0" aria-hidden="true">
+          <div class="reel-viewport">
+            <div class="reel-strip"></div>
+          </div>
+        </div>
+        <div class="reel-separator" aria-hidden="true"></div>
+        <div class="reel-wrapper" id="reel-1" aria-hidden="true">
+          <div class="reel-viewport">
+            <div class="reel-strip"></div>
+          </div>
+        </div>
+        <div class="reel-separator" aria-hidden="true"></div>
+        <div class="reel-wrapper" id="reel-2" aria-hidden="true">
+          <div class="reel-viewport">
+            <div class="reel-strip"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="payline-bar" id="payline-bottom" aria-hidden="true">
+        <span class="payline-pip"></span><span class="payline-pip"></span><span class="payline-pip"></span>
+      </div>
+
+      <!-- Win flash overlay -->
+      <div id="win-overlay" class="win-overlay hidden" aria-hidden="true">
+        <div class="win-overlay-text"></div>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section id="controls-section" aria-label="Game controls">
+      <div id="bet-controls" role="group" aria-label="Bet amount controls">
+        <button id="bet-decrease" class="btn-small" aria-label="Decrease bet by one step">−</button>
+        <div class="bet-readout" aria-live="polite">
+          <span class="bet-label">BET</span>
+          <span id="bet-amount">10</span>
+        </div>
+        <button id="bet-increase" class="btn-small" aria-label="Increase bet by one step">+</button>
+        <button id="max-bet" class="btn-small btn-max" aria-label="Set maximum bet">MAX</button>
+      </div>
+
+      <button id="spin-button" class="btn-spin" aria-label="Spin the reels">
+        <span class="spin-icon" aria-hidden="true">◉</span>
+        <span class="spin-label">SPIN</span>
+      </button>
+
+      <div id="auto-controls" role="group" aria-label="Auto spin controls">
+        <button id="auto-spin-btn" class="btn-small" aria-pressed="false" aria-label="Toggle auto spin">AUTO</button>
+        <select id="auto-count-select" aria-label="Number of automatic spins">
+          <option value="5">5×</option>
+          <option value="10" selected>10×</option>
+          <option value="25">25×</option>
+          <option value="50">50×</option>
+        </select>
+        <span id="auto-remaining" class="auto-remaining" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <!-- Session Stats -->
+    <section id="stats-section" aria-label="Session statistics">
+      <div class="stat-card">
+        <span class="stat-label">Spins</span>
+        <span id="stat-spins" class="stat-value" aria-live="polite">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Total Won</span>
+        <span id="stat-total-won" class="stat-value" aria-live="polite">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Biggest Win</span>
+        <span id="stat-biggest-win" class="stat-value" aria-live="polite">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Win Rate</span>
+        <span id="stat-win-rate" class="stat-value" aria-live="polite">0%</span>
+      </div>
+    </section>
+
+    <!-- Bottom Panels: Log / Leaderboard / Chat -->
+    <div id="panels-grid">
+      <!-- Game Log -->
+      <section id="log-section" aria-label="Game log">
+        <h2 class="panel-title">Game Log</h2>
+        <div id="game-log" role="log" aria-live="polite" aria-relevant="additions text">
+          <p class="log-entry log-info">Welcome to Lucky Reels — good luck!</p>
+        </div>
+      </section>
+
+      <!-- Leaderboard -->
+      <section id="leaderboard-section" aria-label="Leaderboard">
+        <h2 class="panel-title">Leaderboard</h2>
+        <ol id="leaderboard-list" aria-label="Top scores"></ol>
+        <div class="leaderboard-actions">
+          <button id="save-score-btn" class="btn-secondary" aria-label="Save your score to the leaderboard">
+            Save Score
+          </button>
+          <button id="clear-lb-btn" class="btn-danger" aria-label="Clear all leaderboard scores">
+            Clear All
+          </button>
+        </div>
+      </section>
+
+      <!-- Chatbot -->
+      <section id="chatbot-section" aria-label="Lucky assistant chatbot">
+        <h2 class="panel-title">Lucky Assistant</h2>
+        <div id="chat-messages" role="log" aria-live="polite" aria-relevant="additions">
+          <div class="chat-msg bot">Hi! I'm Lucky 🎰 Ask me anything about the game!</div>
+        </div>
+        <div id="chat-input-row">
+          <input
+            type="text"
+            id="chat-input"
+            placeholder="Ask Lucky…"
+            maxlength="200"
+            aria-label="Type a message to Lucky"
+            autocomplete="off"
+          />
+          <button id="chat-send-btn" class="btn-small" aria-label="Send message">▶</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Accessibility Panel -->
+  <aside id="a11y-panel" aria-label="Accessibility settings">
+    <button id="a11y-toggle-btn" aria-expanded="false" aria-controls="a11y-options" aria-label="Open accessibility options">
+      ♿
+    </button>
+    <div id="a11y-options" hidden>
+      <p class="a11y-heading">Accessibility</p>
+      <label class="a11y-row">
+        <input type="checkbox" id="toggle-reduce-motion" role="switch" />
+        Reduce Motion
+      </label>
+      <label class="a11y-row">
+        <input type="checkbox" id="toggle-high-contrast" role="switch" />
+        High Contrast
+      </label>
+      <label class="a11y-row">
+        <input type="checkbox" id="toggle-large-text" role="switch" />
+        Large Text
+      </label>
+      <label class="a11y-row">
+        <input type="checkbox" id="toggle-mute" role="switch" />
+        Mute Audio
+      </label>
+    </div>
+  </aside>
+
+  <!-- Hidden live region for screen-reader announcements -->
+  <div id="sr-announce" role="alert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+
+  <script src="rng.js"></script>
+  <script src="gameLogic.js"></script>
+  <script src="audio.js"></script>
+  <script src="ui.js"></script>
+  <script src="chatbot.js"></script>
+  <script src="leaderboard.js"></script>
+  <script src="accessibility.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
