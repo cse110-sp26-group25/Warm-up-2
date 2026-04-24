@@ -41,6 +41,7 @@
         <button class="nav-btn" id="btn-leaderboard"  aria-controls="panel-leaderboard">Leaderboard</button>
         <button class="nav-btn" id="btn-achievements" aria-controls="panel-achievements">Achievements</button>
         <button class="nav-btn" id="btn-stats"        aria-controls="panel-stats">Stats</button>
+        <button class="nav-btn" id="btn-payouts"      aria-controls="panel-payouts">Payouts</button>
         <button class="nav-btn" id="btn-chat"         aria-controls="panel-chat">Chat</button>
         <button class="nav-btn" id="btn-settings"     aria-controls="panel-settings">Settings</button>
       </nav>
@@ -158,6 +159,11 @@
           <div class="reel-divider" aria-hidden="true"></div>
           <div class="reel-container" id="reel-4"><div class="reel-strip" id="strip-4"></div></div>
           <div class="payline" aria-hidden="true"></div>
+        </div>
+
+        <!-- Pity meter progress bar (visual only — no numeric value). -->
+        <div class="pity-bar-wrapper" aria-hidden="true">
+          <div class="pity-bar-fill" id="pity-bar-fill"></div>
         </div>
 
         <!-- Near-miss + result live-region. -->
@@ -320,6 +326,15 @@
         Wipe Saved Data
       </button>
     </section>
+  </aside>
+
+  <!-- Payout table panel -->
+  <aside class="slide-panel" id="panel-payouts" role="dialog"
+         aria-modal="true" aria-labelledby="payouts-panel-title" hidden>
+    <button type="button" class="panel-close" data-close="panel-payouts"
+            aria-label="Close payout table">&#x2715;</button>
+    <h2 id="payouts-panel-title">Payout Table</h2>
+    <div id="payouts-table-content"></div>
   </aside>
 
   <!-- Full leaderboard -->

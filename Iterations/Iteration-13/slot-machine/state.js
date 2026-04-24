@@ -1,17 +1,22 @@
 /**
- * state.js — Centralized, persistent application state (Iteration 09).
+ * state.js — Centralized, persistent application state (Iteration 14).
  *
  * Single source of truth for data that must survive a page refresh:
- *   • totalWinnings, spinCount, pityMeter
+ *   • totalWinnings, spinCount, pityMeter, balance
  *   • unlockedAchievements, playerStats
  *   • jackpot, player (name, color), settings, meta
  *
- * Iteration 09 additions:
- *   • `_checkStorageAvailable()` — detects private/incognito mode at boot
- *     and exposes `isStorageAvailable()` so the UI can warn the player.
- *   • `_migrate(saved)` — versioned migration pathway. Every schema bump
+ * Iteration 14 — no schema change from Iteration 13; the
+ * `isStorageAvailable()` API (added in Iteration 09) is now actively
+ * consumed by `ui.js` to surface the header memory-error badge when
+ * private/incognito storage is blocked. The module itself is unchanged.
+ *
+ * Prior-iteration highlights preserved here:
+ *   • `_checkStorageAvailable()` — detects private/incognito mode at boot.
+ *   • `_migrate(saved)` — versioned migration pathway. Each schema bump
  *     adds a new conditional block here; older saves upgrade cleanly.
- *   • `settings.fastPlay` added to the default schema (Fast Play toggle).
+ *   • `settings.fastPlay` (added Iteration 09).
+ *   • `balance` field (added Iteration 13).
  *   • Writes are no-ops (silently swallowed) when storage is unavailable.
  */
 const State = (() => {

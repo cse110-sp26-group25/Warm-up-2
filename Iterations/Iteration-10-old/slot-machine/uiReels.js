@@ -1,27 +1,12 @@
 /**
- * uiReels.js — Reel-strip construction and animation (Iteration 14).
+ * uiReels.js — Reel-strip construction and animation (Iteration 09).
  *
  * Owns all DOM work for the 5-reel grid:
  *   • Building symbol-strip elements from GameLogic reel data.
  *   • Animating each strip through spin → decelerate → overshoot → settle.
- *   • CSS-only motion blur via will-change + blur() class toggles.
- *   • Fast-Play timing reduction (≈1.0 s total cycle when active).
- *
- * Iteration 14 — Fast Play wiring:
- *   Previously, the Fast Play toggle only reduced the per-reel spin
- *   durations (Phase 1). The overshoot + settle phases (Phases 2–3)
- *   stayed at their full 180 ms, so Fast Play only saved ~1.1 s out of
- *   the ~2.1 s total cycle.
- *
- *   Now every animation phase scales by the same factor (`FAST_FACTOR`,
- *   0.5 by default). The factor is applied at two points:
- *     • `spinDurations(fastPlay)` returns the scaled per-reel durations.
- *     • `animateReel(...)` pulls `OVERSHOOT_MS` through `_phaseScale(...)`
- *       so the bounce also runs at 50 % duration when Fast Play is on.
- *
- *   Resulting totals at the default factor of 0.5:
- *     Normal: 900 + 4×250 + 180 = 2080 ms
- *     Fast:   450 + 4×125 +  90 = 1040 ms  ←  ≈1.0 s as specified.
+ *   • CSS-only motion blur (replaces SVG <filter> from Iteration 08) via
+ *     will-change + CSS blur() — compatible with Firefox and Safari.
+ *   • Fast-Play timing table (≈1.2 s total spin when active).
  *
  * All tunables live in the top-level CFG object. Exposes a frozen public
  * API consumed by the ui.js orchestrator.
@@ -44,16 +29,16 @@ const UiReels = (() => {
     FIRST_STOP_MS:       900,
     /** Extra ms added per subsequent reel at normal speed. */
     PER_REEL_STAGGER:    250,
-    /**
-     * Fast-Play duration multiplier.
-     * Applied uniformly to every phase (reel spin + overshoot + settle)
-     * so the whole animation scales together instead of just Phase 1.
-     */
-    FAST_FACTOR:         0.5,
-    /** Duration of the full overshoot → settle bounce (ms). Each half gets half. */
+    /** Fast-Play first-reel stop (ms). Last reel ≈ 1.0 s + OVERSHOOT. */
+    FAST_FIRST_STOP_MS:  600,
+    /** Fast-Play stagger (ms). */
+    FAST_REEL_STAGGER:   100,
+    /** Duration of the overshoot → settle bounce (ms). */
     OVERSHOOT_MS:        180,
     /** Overshoot distance expressed in symbol-heights. */
     OVERSHOOT_FRACTION:  0.5,
+    /** Approximate full rotations during the high-speed phase. */
+    HIGH_SPEED_WRAPS:    8,
     /** Fraction of Phase 1 at which motion blur is removed (strip decelerates). */
     BLUR_LIFT_FRACTION:  0.6,
   });
@@ -148,16 +133,6 @@ const UiReels = (() => {
     return div;
   }
 
-  /**
-   * Apply the Fast-Play scale factor to a duration.
-   * @param {number}  ms       - Base duration in ms.
-   * @param {boolean} fastPlay - True if Fast Play is currently active.
-   * @returns {number} Scaled duration in ms.
-   */
-  function _phaseScale(ms, fastPlay) {
-    return fastPlay ? ms * CFG.FAST_FACTOR : ms;
-  }
-
   // ── Public API ─────────────────────────────────────────────────────
   return Object.freeze({
 
@@ -206,24 +181,25 @@ const UiReels = (() => {
     setSpinning(val) { _spinning = !!val; },
 
     /**
-     * Animate one reel through its full spin cycle using requestAnimationFrame.
+     * Animate one reel through its full spin cycle.
      * @description
-     *   Phase 1: ease-out cubic drives the strip from startPos to landingPos
-     *     (winning symbol centred in the 4th repetition), covering 3–4 full
-     *     visual rotations. CSS blur classes simulate motion blur.
-     *   Phase 2: small overshoot past landingPos (ease-in-out, half of
-     *     scaled OVERSHOOT_MS).
-     *   Phase 3: settle back to landingPos (ease-out, other half).
-     *   The strip always scrolls downward (translateY toward more-negative).
+     *   Phase 1 (deceleration):  strip travels `HIGH_SPEED_WRAPS` full rotations
+     *     with an ease-out curve; CSS blur simulates motion-blur (no SVG filter).
+     *   Phase 2 (overshoot):     strip continues past target by
+     *     `OVERSHOOT_FRACTION` symbol-heights.
+     *   Phase 3 (settle):        strip bounces back to the exact target.
+     *   Phase 4 (snap):          transition cleared; strip pinned to a clean
+     *     "2nd repetition" offset to prevent sub-pixel drift over many spins.
      *
-     * @param {number}  reelIndex    - Column index (0–4).
-     * @param {number}  targetStop   - Strip index of the winning centre symbol.
-     * @param {number}  spinDuration - Phase-1 duration in ms (already scaled).
-     * @param {boolean} [fastPlay]   - True if Fast Play is on — also scales the
-     *                                 overshoot/settle phases.
+     *   Motion blur is implemented with the CSS `blur()` filter and a gentle
+     *   `opacity` dip — both GPU-composited and compatible with all major
+     *   browsers. The SVG <filter id="vblur"> from Iteration 08 is gone.
+     * @param {number} reelIndex    - Column index (0–4).
+     * @param {number} targetStop   - Strip index of the winning centre symbol.
+     * @param {number} spinDuration - Phase-1 duration in ms.
      * @returns {Promise<void>} Resolves after the reel fully settles.
      */
-    animateReel(reelIndex, targetStop, spinDuration, fastPlay) {
+    animateReel(reelIndex, targetStop, spinDuration) {
       return new Promise(resolve => {
         const strip = $('strip-' + reelIndex);
         if (!strip) { resolve(); return; }
@@ -231,90 +207,70 @@ const UiReels = (() => {
         const reel    = GameLogic.REELS[reelIndex];
         const total   = reel.length;
         const symH    = CFG.SYMBOL_HEIGHT;
-        const overshootDist   = symH * CFG.OVERSHOOT_FRACTION;
-        const overshootMs     = _phaseScale(CFG.OVERSHOOT_MS, !!fastPlay);
-        const halfOvershootMs = overshootMs / 2;
 
-        // Landing: winning symbol centred (row 1) in the 4th repetition (0-indexed rep 3).
-        const landingPos = (3 * total + targetStop - 1) * symH;
+        // Start from a random position in the 2nd repetition.
+        const startPos  = (total + RNG.randInt(0, total - 1) - 1) * symH;
+        // Target: winning symbol centred (row 1) in the 2nd repetition.
+        const targetPos = (total + targetStop - 1) * symH;
+        // The high-speed phase adds HIGH_SPEED_WRAPS full rotations so
+        // the reel looks like it's genuinely flying.
+        const finalPos  = targetPos + CFG.HIGH_SPEED_WRAPS * symH;
+        const overshoot = symH * CFG.OVERSHOOT_FRACTION;
 
-        // Random start within the first repetition — always < landingPos.
-        const startPos = RNG.randInt(0, total - 1) * symH;
-
-        // Easing helpers.
-        const easeOut   = t => 1 - Math.pow(1 - t, 3);
-
-        // Snap to start instantly (no animation).
+        // Snap to start position without animating.
         strip.style.transition = 'none';
         strip.style.transform  = `translateY(-${startPos}px)`;
         strip.classList.remove('is-decelerating', 'is-settling');
         strip.classList.add('is-spinning');
+
+        // Force a reflow so the class and transform take effect before
+        // the transition starts.
         // eslint-disable-next-line no-unused-expressions
-        strip.offsetHeight; // force reflow before rAF starts
+        strip.offsetHeight;
 
-        let p1Start = null;
+        // Phase 1: ease-out deceleration toward finalPos + overshoot.
+        strip.style.transition = `transform ${spinDuration}ms cubic-bezier(0.12, 0.82, 0.18, 1)`;
+        strip.style.transform  = `translateY(-${finalPos + overshoot}px)`;
 
-        // ── Phase 1: ease-out deceleration from startPos to landingPos ──
-        function phase1(ts) {
-          if (!_spinning) { resolve(); return; }
-          if (!p1Start) p1Start = ts;
-          const t = Math.min((ts - p1Start) / spinDuration, 1);
-          strip.style.transform =
-            `translateY(-${startPos + (landingPos - startPos) * easeOut(t)}px)`;
+        // At ~60% of Phase 1 the strip is slow enough to remove heavy blur.
+        const blurLiftMs = Math.floor(spinDuration * CFG.BLUR_LIFT_FRACTION);
+        const t1 = setTimeout(() => {
+          if (!_spinning) return;
+          strip.classList.remove('is-spinning');
+          strip.classList.add('is-decelerating');
+        }, blurLiftMs);
 
-          // Lift heavy blur at ~60 % — strip is decelerating visibly.
-          if (t >= CFG.BLUR_LIFT_FRACTION && strip.classList.contains('is-spinning')) {
-            strip.classList.remove('is-spinning');
-            strip.classList.add('is-decelerating');
-          }
-
-          if (t < 1) { requestAnimationFrame(phase1); return; }
-
-          // Phase 1 complete — strip is at landingPos.
-          // Phases 2+3 use CSS transitions so the browser interpolates without
-          // per-frame JS snap risk.
+        // Phase 1 → Phase 2: overshoot bounce.
+        const t2 = setTimeout(() => {
+          clearTimeout(t1); // already fired, no-op; guard for safety
           strip.classList.remove('is-decelerating');
           strip.classList.add('is-settling');
+          strip.style.transition = `transform ${CFG.OVERSHOOT_MS}ms cubic-bezier(0.4, 0, 0.3, 1)`;
+          strip.style.transform  = `translateY(-${finalPos}px)`;
+        }, spinDuration);
 
-          // Commit current transform as the animation start point before
-          // switching to CSS-driven movement.
-          void strip.offsetHeight;
-
-          // Phase 2: ease-in overshoot to peakPos.
-          strip.style.transition = `transform ${halfOvershootMs}ms ease-in`;
-          strip.style.transform  = `translateY(-${landingPos + overshootDist}px)`;
-
-          setTimeout(() => {
-            // Phase 3: ease-out settle back to landingPos — no explicit final
-            // snap needed because the CSS end-value IS landingPos.
-            void strip.offsetHeight;
-            strip.style.transition = `transform ${halfOvershootMs}ms ease-out`;
-            strip.style.transform  = `translateY(-${landingPos}px)`;
-
-            setTimeout(() => {
-              strip.style.transition = '';  // restore CSS control
-              strip.classList.remove('is-settling');
-              resolve();
-            }, halfOvershootMs);
-          }, halfOvershootMs);
-        }
-
-        requestAnimationFrame(phase1);
+        // Phase 2 → Phase 4: snap to clean target, resolve the promise.
+        setTimeout(() => {
+          clearTimeout(t2);
+          strip.classList.remove('is-settling');
+          strip.style.transition = 'none';
+          strip.style.transform  = `translateY(-${targetPos}px)`;
+          resolve();
+        }, spinDuration + CFG.OVERSHOOT_MS);
       });
     },
 
     /**
      * Compute per-reel spin durations for all columns.
-     * @description When `fastPlay` is true, each base duration is scaled by
-     *   `CFG.FAST_FACTOR`. The same scaling is applied inside `animateReel`
-     *   to the overshoot/settle phases, so the whole cycle shrinks together.
      * @param {boolean} fastPlay - True when Fast Play mode is active.
      * @returns {number[]} Array of durations in ms, one per reel.
      */
     spinDurations(fastPlay) {
+      const first   = fastPlay ? CFG.FAST_FIRST_STOP_MS : CFG.FIRST_STOP_MS;
+      const stagger = fastPlay ? CFG.FAST_REEL_STAGGER  : CFG.PER_REEL_STAGGER;
       return Array.from(
         { length: GameLogic.REEL_COUNT },
-        (_, i) => _phaseScale(CFG.FIRST_STOP_MS + i * CFG.PER_REEL_STAGGER, !!fastPlay)
+        (_, i) => first + i * stagger
       );
     },
   });

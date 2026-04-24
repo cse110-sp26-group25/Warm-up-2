@@ -121,6 +121,12 @@
           <button type="submit" aria-label="Send message">&#9658;</button>
         </form>
       </section>
+
+      <!-- Achievements widget (moved to left panel) -->
+      <section class="achievements-widget" aria-labelledby="ach-title-left">
+        <h2 id="ach-title-left" class="widget-title">ACHIEVEMENTS</h2>
+        <div class="achievements-grid" id="achievements-grid"></div>
+      </section>
     </aside>
 
     <!-- CENTRE: Slot machine -->
@@ -161,9 +167,12 @@
           <div class="payline" aria-hidden="true"></div>
         </div>
 
-        <!-- Pity meter progress bar (visual only — no numeric value). -->
+        <!-- Pity meter progress bar with label. -->
         <div class="pity-bar-wrapper" aria-hidden="true">
-          <div class="pity-bar-fill" id="pity-bar-fill"></div>
+          <span class="pity-bar-label">PITY</span>
+          <div class="pity-bar-track">
+            <div class="pity-bar-fill" id="pity-bar-fill"></div>
+          </div>
         </div>
 
         <!-- Near-miss + result live-region. -->
@@ -216,11 +225,21 @@
           <span class="power-core-glow" aria-hidden="true"></span>
         </button>
 
-        <!-- Winnings display. -->
-        <figure class="winnings-display">
-          <figcaption class="winnings-label">WON</figcaption>
-          <output class="winnings-amount" id="winnings-amount" for="spin-btn">$0.00</output>
-        </figure>
+        <!-- Balance / winnings / rank row. -->
+        <div class="machine-stat-row">
+          <figure class="balance-display" id="balance-display">
+            <figcaption class="balance-label">BALANCE</figcaption>
+            <output class="balance-amount" id="balance-amount">$200.00</output>
+          </figure>
+          <figure class="winnings-display">
+            <figcaption class="winnings-label">WON</figcaption>
+            <output class="winnings-amount" id="winnings-amount" for="spin-btn">$0.00</output>
+          </figure>
+          <figure class="rank-display">
+            <figcaption class="rank-label">RANK</figcaption>
+            <output class="rank-amount" id="rank-display">UNRANKED</output>
+          </figure>
+        </div>
 
         <!-- Bottom lights bar. -->
         <div class="lights-bar bottom-lights" aria-hidden="true">
@@ -232,8 +251,8 @@
       </section>
     </section>
 
-    <!-- RIGHT: Leaderboard + stats + achievements -->
-    <aside class="panel-right" aria-label="Leaderboard, stats, and achievements">
+    <!-- RIGHT: Leaderboard + stats -->
+    <aside class="panel-right" aria-label="Leaderboard and stats">
 
       <section class="leaderboard-widget" aria-labelledby="lb-title">
         <h2 id="lb-title" class="widget-title">TOP UNITS</h2>
@@ -249,11 +268,6 @@
           <div class="stat-row"><dt>Jackpots</dt>     <dd id="stat-jackpots">0</dd></div>
           <div class="stat-row"><dt>Time Played</dt>  <dd id="stat-time">0m</dd></div>
         </dl>
-      </section>
-
-      <section class="achievements-widget" aria-labelledby="ach-title">
-        <h2 id="ach-title" class="widget-title">ACHIEVEMENTS</h2>
-        <div class="achievements-grid" id="achievements-grid"></div>
       </section>
     </aside>
   </main>
@@ -378,6 +392,9 @@
       <button type="submit">Send</button>
     </form>
   </aside>
+
+  <!-- Achievement toast container (bottom-right, stacks upward). -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
 
   <!-- Full-screen win celebration. -->
   <div class="win-celebration" id="win-celebration" aria-hidden="true" role="status">

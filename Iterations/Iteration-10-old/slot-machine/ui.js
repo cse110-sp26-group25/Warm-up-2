@@ -1,26 +1,21 @@
 /**
- * ui.js — UI orchestration layer (Iteration 14).
+ * ui.js — UI orchestration layer (Iteration 09).
  *
- * Top-level coordinator that wires together every sub-module (UiReels,
- * UiMascot, UiPanels) and drives the core spin cycle, win celebrations,
- * and boot sequence. Heavy lifting is split into:
+ * Serves as the top-level coordinator that wires together every sub-module
+ * (UiReels, UiMascot, UiPanels) and drives the core spin cycle, win
+ * celebrations, and boot sequence. The heavy lifting has been split out:
  *
  *   • uiReels.js   — reel-strip construction and CSS-blur animation.
  *   • uiMascot.js  — robot mascot interactions, chat, idle quips.
  *   • uiPanels.js  — slide-over panels, settings, leaderboard, achievements.
  *
- * Iteration 14 — what changed in this file:
- *   • The balance guard has moved INTO `GameLogic.spin()`. This module no
- *     longer reads the balance before calling `spin`; it branches on the
- *     returned rejection object and surfaces a denied-sound + quip.
- *   • Achievement toasts drop from the top-center over the machine frame.
- *     The slide-out animation matches the new drop direction.
- *   • An `#storage-warning` badge appears in the header when private-mode
- *     storage is blocked; the boot greeting is swapped for the memory-
- *     error greeting specified in the Iteration 14 plan.
- *   • The balance display is kept in sync via `canSpin(bet)` for disabled
- *     state — the UI-layer check is now a disablement optimisation only,
- *     not a security boundary.
+ * What remains here is intentionally narrow:
+ *   • The spin handler (_doSpin) and security gate.
+ *   • Win / loss / near-miss outcome handling.
+ *   • Visual effects (flash, coin burst, lights, win-celebration overlay).
+ *   • Jackpot and winnings displays.
+ *   • Global keyboard and mouse-entropy listeners.
+ *   • Boot sequence (greeting, private-mode warning).
  */
 (function () {
   'use strict';
@@ -31,48 +26,28 @@
   /** @type {Object} Spin-outcome and visual-effect tunables. */
   const CFG = Object.freeze({
     /** Refresh cadence for the jackpot display (ms). */
-    JACKPOT_POLL_MS:    2000,
+    JACKPOT_POLL_MS:   2000,
     /** Threshold: payout / bet >= this triggers a "big win" celebration. */
-    BIG_WIN_MULTIPLE:   10,
+    BIG_WIN_MULTIPLE:  10,
     /** Small win celebration duration (ms). */
-    SMALL_WIN_MS:       1500,
+    SMALL_WIN_MS:      1500,
     /** Big win celebration duration (ms). */
-    BIG_WIN_MS:         3000,
+    BIG_WIN_MS:        3000,
     /** Jackpot celebration duration (ms). */
-    JACKPOT_WIN_MS:     5000,
+    JACKPOT_WIN_MS:    5000,
     /** Coins spawned per tier. */
-    COINS_SMALL:        8,
-    COINS_BIG:          20,
-    COINS_JACKPOT:      40,
+    COINS_SMALL:       8,
+    COINS_BIG:         20,
+    COINS_JACKPOT:     40,
     /** Winnings counter bump animation duration (ms). */
-    BUMP_MS:            450,
+    BUMP_MS:           450,
     /** Near-miss bar visibility duration (ms). */
-    NEAR_MISS_SHOW_MS:  3000,
+    NEAR_MISS_SHOW_MS: 3000,
     /** Flash overlay clear delay (ms — slightly beyond the keyframe). */
-    FLASH_CLEAR_MS:     1100,
+    FLASH_CLEAR_MS:    1100,
     /** Boot-sequence greeting delay (ms). */
-    BOOT_DELAY_MS:      600,
-    /** Toast visibility before slide-out (ms). */
-    TOAST_VISIBLE_MS:   3000,
-    /** Toast slide-out animation duration — must match CSS (ms). */
-    TOAST_SLIDE_OUT_MS: 300,
+    BOOT_DELAY_MS:     600,
   });
-
-  /**
-   * Memory-error greeting for players in private/incognito browsing.
-   * Verbatim from the Iteration 14 plan.
-   * @type {string}
-   */
-  const MEMORY_ERROR_GREETING =
-    'SYSTEMS ONLINE. Memory circuits fried. Progress will be lost on exit.';
-
-  /**
-   * ROBO quip for insufficient-balance rejections.
-   * Verbatim from the Iteration 14 plan.
-   * @type {string}
-   */
-  const INSUFFICIENT_FUNDS_QUIP =
-    'Insufficient funds, unit. My charity module is currently disabled.';
 
   // ── DOM helpers ────────────────────────────────────────────────────
   /** @param {string} id @returns {HTMLElement|null} */
@@ -84,9 +59,6 @@
   const spinBtn        = $('spin-btn');
   const jackpotAmount  = $('jackpot-amount');
   const winningsAmount = $('winnings-amount');
-  const balanceAmount  = $('balance-amount');
-  const balanceDisplay = $('balance-display');
-  const rankDisplay    = $('rank-display');
   const resultDisplay  = $('result-display');
   const nearMissBar    = $('near-miss-bar');
   const winFlash       = $('win-flash');
@@ -94,8 +66,6 @@
   const winCelebration = $('win-celebration');
   const winAmountDisp  = $('win-amount-display');
   const winLabelDisp   = $('win-label-display');
-  const toastContainer = $('toast-container');
-  const storageWarning = $('storage-warning');
 
   // ── Spin-local state ───────────────────────────────────────────────
   /** @type {boolean} True while a spin is in progress. */
@@ -118,39 +88,6 @@
   // ── Boot: build reel strips ────────────────────────────────────────
   UiReels.buildAllStrips();
 
-  // ── Balance helpers ────────────────────────────────────────────────
-  /**
-   * Refresh the balance display and spin-button lock state.
-   * @description Uses `GameLogic.canSpin(bet)` as the source of truth for
-   *   whether the spin button should be disabled. The authoritative guard
-   *   still lives inside `GameLogic.spin()` — this call is purely for UI
-   *   responsiveness.
-   * @returns {void}
-   */
-  function _updateBalance() {
-    const bal = GameLogic.balance;
-    if (balanceAmount) balanceAmount.textContent = GameLogic.formatMoney(bal);
-    const affordable = GameLogic.canSpin(_currentBet);
-    if (balanceDisplay) balanceDisplay.classList.toggle('balance-low', !affordable);
-    if (!_spinning) spinBtn.disabled = !affordable;
-  }
-
-  /**
-   * Refresh the player rank indicator.
-   * @returns {void}
-   */
-  function _updateRank() {
-    if (!rankDisplay) return;
-    const rank = Leaderboard.getPlayerRank();
-    if (rank === null) {
-      rankDisplay.textContent = 'UNRANKED';
-      rankDisplay.classList.remove('ranked');
-    } else {
-      rankDisplay.textContent = 'RANK #' + rank;
-      rankDisplay.classList.add('ranked');
-    }
-  }
-
   // ── Bet selector ───────────────────────────────────────────────────
   $$('.bet-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -164,37 +101,12 @@
       _currentBet = Number(btn.dataset.bet);
       Audio.playClick();
       UiMascot.resetIdle();
-      _updateBalance(); // re-evaluate lock state for new bet
     });
   });
 
   // ═══════════════════════════════════════════════════════════════════
   //  SPIN HANDLER
   // ═══════════════════════════════════════════════════════════════════
-
-  /**
-   * Handle a rejection returned by `GameLogic.spin()`.
-   * @description Centralised in its own function so every rejection path
-   *   (insufficient balance, invalid bet, future hard rejections) gets the
-   *   same user-facing treatment: denied sound + ROBO quip + UI refresh.
-   * @param {{reason:string, balance:number, bet:number}} rej
-   * @returns {void}
-   */
-  function _handleSpinRejection(rej) {
-    if (rej.reason === GameLogic.REJECT.INSUFFICIENT_BALANCE) {
-      Audio.unlock();
-      Audio.playDenied();
-      UiMascot.showRobotBubble(INSUFFICIENT_FUNDS_QUIP);
-      UiMascot.addChatMessage('ROBO', INSUFFICIENT_FUNDS_QUIP, true);
-      resultDisplay.textContent = 'Insufficient balance.';
-      UiMascot.setRobotMood('sad');
-    } else {
-      // Invalid bet / future reasons — still play the denied sound.
-      Audio.playDenied();
-      UiMascot.showRobotBubble('Spin rejected: ' + rej.reason);
-    }
-    _updateBalance();
-  }
 
   /**
    * Execute a full spin cycle: security → resolve → animate → outcome.
@@ -205,23 +117,12 @@
 
     Audio.unlock();
 
-    // Anti-automation gate (timing + entropy). Unrelated to balance.
     const check = Security.checkSpin();
     if (!check.allowed) {
       UiMascot.showRobotBubble(_lockoutMessage(check.reason));
       return;
     }
 
-    // Call GameLogic.spin *first*. The balance guard lives inside it now.
-    const result = GameLogic.spin(_currentBet);
-
-    // ── Rejection path ───────────────────────────────────────────
-    if (result && result.rejected) {
-      _handleSpinRejection(result);
-      return;
-    }
-
-    // ── Accepted path ────────────────────────────────────────────
     _spinning = true;
     UiReels.setSpinning(true);
     UiMascot.resetIdle();
@@ -234,8 +135,9 @@
     nearMissBar.textContent   = '';
     nearMissBar.classList.remove('visible');
 
-    // Achievement bookkeeping for the spin event itself.
-    const spinUnlocked = Achievements.recordSpin();
+    // Resolve the spin outcome up-front — animation is purely presentational.
+    const result        = GameLogic.spin(_currentBet);
+    const spinUnlocked  = Achievements.recordSpin();
 
     // Per-reel durations respect the Fast Play setting.
     const fastPlay = !!(State.get('settings.fastPlay'));
@@ -260,9 +162,6 @@
     $$('.lights-bar').forEach(lb => lb.classList.remove('active'));
     spinBtn.classList.remove('is-spinning');
 
-    // Balance was debited (and any payout credited) atomically inside
-    // GameLogic.spin. We only need to display the outcome here.
-
     if (result.payout > 0 || result.type === 'jackpot') {
       _handleWin(result);
     } else if (result.nearMiss) {
@@ -281,17 +180,13 @@
     if (spinUnlocked.length) _showAchievementUnlock(spinUnlocked[0]);
 
     _updateJackpot();
-    _updateLuckIndicator();
-    _updateBalance();
-    _updateRank();
     UiPanels.updateStats();
     UiPanels.updateAchievements();
     UiPanels.refreshLeaderboard();
 
     _spinning = false;
     UiReels.setSpinning(false);
-    // Re-evaluate disabled state (balance may now be too low for current bet).
-    _updateBalance();
+    spinBtn.disabled = false;
     UiMascot.resetIdle();
   }
 
@@ -437,12 +332,10 @@
 
   /**
    * Cycle the lights bars for a duration.
-   * Suppressed in epilepsy-safe mode — rapid colour cycling is a flash risk.
    * @param {number} duration - ms.
    * @returns {void}
    */
   function _lightsCycle(duration) {
-    if (document.body.dataset.epilepsysafe === 'true') return;
     $$('.lights-bar').forEach(lb => lb.classList.add('win-lights'));
     setTimeout(
       () => $$('.lights-bar').forEach(lb => lb.classList.remove('win-lights')),
@@ -508,47 +401,7 @@
   }
 
   /**
-   * Show a brief top-center toast for a newly unlocked achievement.
-   * Toasts stack below one another via flex column layout.
-   * Enforces a cap of 3 simultaneous toasts — if the cap is reached the
-   * oldest live toast is dismissed immediately before the new one is added,
-   * so the stack never grows tall enough to overlap the jackpot or reels.
-   * Respects the `data-reducedmotion` setting (CSS handles it).
-   * @param {{label:string, desc:string}} def - Achievement definition.
-   * @returns {void}
-   */
-  function _showAchievementToast(def) {
-    if (!toastContainer) return;
-
-    // Enforce a 3-toast cap: dismiss the oldest live toast before adding a new one.
-    const live = toastContainer.querySelectorAll('.toast:not(.toast-out)');
-    if (live.length >= 3) {
-      const oldest = live[0];
-      oldest.classList.add('toast-out');
-      setTimeout(() => {
-        if (oldest.parentNode) oldest.parentNode.removeChild(oldest);
-      }, CFG.TOAST_SLIDE_OUT_MS);
-    }
-
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.setAttribute('role', 'status');
-    toast.innerHTML =
-      `<span class="toast-icon" aria-hidden="true">&#9733;</span>` +
-      `<span class="toast-body">UNLOCKED: ${_esc(def.label)}</span>`;
-    toastContainer.appendChild(toast);
-
-    // After the visible duration, animate out and remove.
-    setTimeout(() => {
-      toast.classList.add('toast-out');
-      setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-      }, CFG.TOAST_SLIDE_OUT_MS);
-    }, CFG.TOAST_VISIBLE_MS);
-  }
-
-  /**
-   * Announce a newly unlocked achievement via bubble, chat, and toast.
+   * Announce a newly unlocked achievement via bubble + chat.
    * @param {{label:string, desc:string}} def - Achievement definition.
    * @returns {void}
    */
@@ -556,7 +409,6 @@
     Audio.playAchievement();
     UiMascot.showRobotBubble('ACHIEVEMENT UNLOCKED: ' + def.label + '!');
     UiMascot.addChatMessage('ROBO', 'Achievement unlocked: ' + def.label + '! ' + def.desc, true);
-    _showAchievementToast(def);
     UiPanels.updateAchievements();
   }
 
@@ -571,47 +423,10 @@
   setInterval(_updateJackpot, CFG.JACKPOT_POLL_MS);
   _updateJackpot();
 
-  // ── Luck warmup indicator ──────────────────────────────────────────
-  /**
-   * Sync the five luck-node dots to the current pity meter.
-   *
-   * Intentional design choices vs the old explicit pity bar:
-   *   • No numeric label — players see "machine warming up" not "X/20 to free win".
-   *   • Square-root compression of the raw fraction so early progress is visually
-   *     apparent, but the indicator plateaus in the upper range, making it harder
-   *     to predict the exact trigger point.
-   *   • Three qualitative colour bands (cool → warm → hot) replace precise fill %.
-   * @returns {void}
-   */
-  function _updateLuckIndicator() {
-    const nodes = document.querySelectorAll('.luck-node');
-    if (!nodes.length) return;
-    const raw  = Math.min(GameLogic.pityMeter / GameLogic.CONFIG.PITY_THRESHOLD, 1);
-    // Square-root compression: early progress reads clearly; late progress converges.
-    const vis  = Math.sqrt(raw);
-    const activeCount = Math.round(vis * nodes.length);
-    nodes.forEach((node, i) => {
-      node.classList.remove('lk-cool', 'lk-warm', 'lk-hot');
-      if (i < activeCount) {
-        if (raw < 0.40)      node.classList.add('lk-cool');
-        else if (raw < 0.75) node.classList.add('lk-warm');
-        else                 node.classList.add('lk-hot');
-      }
-    });
-  }
-  _updateLuckIndicator();
-
   // Hydrate winnings on boot.
   if (winningsAmount) {
     winningsAmount.textContent = GameLogic.formatMoney(GameLogic.totalWinnings);
   }
-
-  // Hydrate balance and rank on boot.
-  _updateBalance();
-  _updateRank();
-
-  // Re-render rank whenever leaderboard changes (bot ticks, etc.).
-  Leaderboard.onChange(_updateRank);
 
   // Initial stats + achievements render.
   UiPanels.updateStats();
@@ -642,40 +457,22 @@
   // ═══════════════════════════════════════════════════════════════════
   //  BOOT SEQUENCE
   // ═══════════════════════════════════════════════════════════════════
-
-  /**
-   * Surface the header "memory error" badge if localStorage is unavailable.
-   * Stops the pulse animation after 10 s so it doesn't compete indefinitely
-   * with the jackpot and antenna pulses for visual attention.
-   * @returns {void}
-   */
-  function _showStorageWarning() {
-    if (!storageWarning) return;
-    storageWarning.hidden = false;
-    storageWarning.setAttribute('aria-hidden', 'false');
-    setTimeout(() => {
-      if (storageWarning) storageWarning.style.animation = 'none';
-    }, 10000);
-  }
-
   setTimeout(() => {
-    const storageOk = State.isStorageAvailable();
-
-    // Pick the right greeting: normal path via Chat, or memory-error override.
-    const greeting = storageOk
-      ? Chat.getBootGreeting()
-      : MEMORY_ERROR_GREETING;
-
+    const greeting = Chat.getBootGreeting();
     UiMascot.addChatMessage('ROBO', greeting, true);
     UiMascot.showRobotBubble(
       greeting.length > 60 ? greeting.slice(0, 57) + '...' : greeting
     );
 
-    if (!storageOk) _showStorageWarning();
+    // Warn the player if localStorage is unavailable (private/incognito mode).
+    if (!State.isStorageAvailable()) {
+      const warning = '⚠ Private browsing detected — your progress will NOT be saved this session!';
+      UiMascot.addChatMessage('ROBO', warning, true);
+      UiMascot.showRobotBubble('Warning: no storage available!');
+    }
 
-    // Welcome sting for returning players only (and only if storage works —
-    // otherwise "returning" has no meaning).
-    if (storageOk && State.isReturningPlayer()) {
+    // Welcome sting for returning players only.
+    if (State.isReturningPlayer()) {
       try { Audio.unlock(); Audio.playWelcome(); } catch (_e) { /* suspended context */ }
     }
   }, CFG.BOOT_DELAY_MS);

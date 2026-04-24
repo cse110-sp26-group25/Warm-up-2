@@ -29,16 +29,14 @@ const UiReels = (() => {
     FIRST_STOP_MS:       900,
     /** Extra ms added per subsequent reel at normal speed. */
     PER_REEL_STAGGER:    250,
-    /** Fast-Play first-reel stop (ms). Last reel ≈ 1.0 s + OVERSHOOT. */
+    /** Fast-Play first-reel stop (ms). */
     FAST_FIRST_STOP_MS:  600,
     /** Fast-Play stagger (ms). */
     FAST_REEL_STAGGER:   100,
-    /** Duration of the overshoot → settle bounce (ms). */
+    /** Duration of the full overshoot → settle bounce (ms). Each half gets half. */
     OVERSHOOT_MS:        180,
     /** Overshoot distance expressed in symbol-heights. */
     OVERSHOOT_FRACTION:  0.5,
-    /** Approximate full rotations during the high-speed phase. */
-    HIGH_SPEED_WRAPS:    8,
     /** Fraction of Phase 1 at which motion blur is removed (strip decelerates). */
     BLUR_LIFT_FRACTION:  0.6,
   });
@@ -181,19 +179,15 @@ const UiReels = (() => {
     setSpinning(val) { _spinning = !!val; },
 
     /**
-     * Animate one reel through its full spin cycle.
+     * Animate one reel through its full spin cycle using requestAnimationFrame.
      * @description
-     *   Phase 1 (deceleration):  strip travels `HIGH_SPEED_WRAPS` full rotations
-     *     with an ease-out curve; CSS blur simulates motion-blur (no SVG filter).
-     *   Phase 2 (overshoot):     strip continues past target by
-     *     `OVERSHOOT_FRACTION` symbol-heights.
-     *   Phase 3 (settle):        strip bounces back to the exact target.
-     *   Phase 4 (snap):          transition cleared; strip pinned to a clean
-     *     "2nd repetition" offset to prevent sub-pixel drift over many spins.
-     *
-     *   Motion blur is implemented with the CSS `blur()` filter and a gentle
-     *   `opacity` dip — both GPU-composited and compatible with all major
-     *   browsers. The SVG <filter id="vblur"> from Iteration 08 is gone.
+     *   Phase 1: ease-out cubic drives the strip from startPos to landingPos
+     *     (winning symbol centred in the 4th repetition), covering 3–4 full
+     *     visual rotations. CSS blur classes simulate motion blur.
+     *   Phase 2: small overshoot past landingPos (ease-in-out, half of OVERSHOOT_MS).
+     *   Phase 3: settle back to landingPos (ease-in-out, other half).
+     *   The strip always scrolls downward (translateY toward more-negative values).
+     *   The old setTimeout-based phase chain is fully replaced.
      * @param {number} reelIndex    - Column index (0–4).
      * @param {number} targetStop   - Strip index of the winning centre symbol.
      * @param {number} spinDuration - Phase-1 duration in ms.
@@ -207,58 +201,82 @@ const UiReels = (() => {
         const reel    = GameLogic.REELS[reelIndex];
         const total   = reel.length;
         const symH    = CFG.SYMBOL_HEIGHT;
+        const overshootDist  = symH * CFG.OVERSHOOT_FRACTION;
+        const halfOvershootMs = CFG.OVERSHOOT_MS / 2;
 
-        // Target: winning symbol centred (row 1) in the 2nd repetition.
-        const targetPos = (total + targetStop - 1) * symH;
-        // The high-speed phase adds HIGH_SPEED_WRAPS full rotations so
-        // the reel looks like it's genuinely flying.
-        const finalPos  = targetPos + CFG.HIGH_SPEED_WRAPS * symH;
-        // Pick a random start in the 2nd repetition, then clamp it below
-        // finalPos so the strip always travels forward (downward scroll).
-        const rawStart  = (total + RNG.randInt(0, total - 1) - 1) * symH;
-        const startPos  = Math.min(rawStart, finalPos - symH);
-        const overshoot = symH * CFG.OVERSHOOT_FRACTION;
+        // Landing: winning symbol centred (row 1) in the 4th repetition (0-indexed rep 3).
+        // Placing the target this deep guarantees ≥3 full visual rotations from any startPos
+        // while staying well within the STRIP_REPS=5 strip length.
+        const landingPos = (3 * total + targetStop - 1) * symH;
 
-        // Snap to start position without animating.
+        // Random start within the first repetition — always < landingPos.
+        const startPos = RNG.randInt(0, total - 1) * symH;
+
+        // Easing helpers.
+        const easeOut   = t => 1 - Math.pow(1 - t, 3);
+        const easeInOut = t => t < 0.5
+          ? 2 * t * t
+          : 1 - Math.pow(2 - 2 * t, 2) / 2;
+
+        // Snap to start instantly (no animation).
         strip.style.transition = 'none';
         strip.style.transform  = `translateY(-${startPos}px)`;
         strip.classList.remove('is-decelerating', 'is-settling');
         strip.classList.add('is-spinning');
-
-        // Force a reflow so the class and transform take effect before
-        // the transition starts.
         // eslint-disable-next-line no-unused-expressions
-        strip.offsetHeight;
+        strip.offsetHeight; // force reflow before rAF starts
 
-        // Phase 1: ease-out deceleration toward finalPos + overshoot.
-        strip.style.transition = `transform ${spinDuration}ms cubic-bezier(0.12, 0.82, 0.18, 1)`;
-        strip.style.transform  = `translateY(-${finalPos + overshoot}px)`;
+        let rafId;
+        let p1Start = null;
 
-        // At ~60% of Phase 1 the strip is slow enough to remove heavy blur.
-        const blurLiftMs = Math.floor(spinDuration * CFG.BLUR_LIFT_FRACTION);
-        const t1 = setTimeout(() => {
-          if (!_spinning) return;
-          strip.classList.remove('is-spinning');
-          strip.classList.add('is-decelerating');
-        }, blurLiftMs);
+        // ── Phase 1: ease-out deceleration from startPos to landingPos ──
+        function phase1(ts) {
+          if (!_spinning) { resolve(); return; }
+          if (!p1Start) p1Start = ts;
+          const t = Math.min((ts - p1Start) / spinDuration, 1);
+          strip.style.transform =
+            `translateY(-${startPos + (landingPos - startPos) * easeOut(t)}px)`;
 
-        // Phase 1 → Phase 2: overshoot bounce.
-        const t2 = setTimeout(() => {
-          clearTimeout(t1); // already fired, no-op; guard for safety
+          // Lift heavy blur at ~60 % — strip is decelerating visibly.
+          if (t >= CFG.BLUR_LIFT_FRACTION && strip.classList.contains('is-spinning')) {
+            strip.classList.remove('is-spinning');
+            strip.classList.add('is-decelerating');
+          }
+
+          if (t < 1) { rafId = requestAnimationFrame(phase1); return; }
+
+          // Phase 1 complete → enter bounce.
           strip.classList.remove('is-decelerating');
           strip.classList.add('is-settling');
-          strip.style.transition = `transform ${CFG.OVERSHOOT_MS}ms cubic-bezier(0.4, 0, 0.3, 1)`;
-          strip.style.transform  = `translateY(-${finalPos}px)`;
-        }, spinDuration);
+          let p2Start = null;
 
-        // Phase 2 → Phase 4: snap to clean target, resolve the promise.
-        setTimeout(() => {
-          clearTimeout(t2);
-          strip.classList.remove('is-settling');
-          strip.style.transition = 'none';
-          strip.style.transform  = `translateY(-${targetPos}px)`;
-          resolve();
-        }, spinDuration + CFG.OVERSHOOT_MS);
+          // ── Phase 2: overshoot past landingPos ─────────────────────────
+          function phase2(ts2) {
+            if (!p2Start) p2Start = ts2;
+            const t2 = Math.min((ts2 - p2Start) / halfOvershootMs, 1);
+            strip.style.transform =
+              `translateY(-${landingPos + overshootDist * easeInOut(t2)}px)`;
+            if (t2 < 1) { rafId = requestAnimationFrame(phase2); return; }
+
+            // ── Phase 3: settle back to landingPos ─────────────────────
+            const peakPos = landingPos + overshootDist;
+            let p3Start   = null;
+            function phase3(ts3) {
+              if (!p3Start) p3Start = ts3;
+              const t3 = Math.min((ts3 - p3Start) / halfOvershootMs, 1);
+              strip.style.transform =
+                `translateY(-${peakPos - overshootDist * easeInOut(t3)}px)`;
+              if (t3 < 1) { rafId = requestAnimationFrame(phase3); return; }
+              strip.classList.remove('is-settling');
+              strip.style.transform = `translateY(-${landingPos}px)`;
+              resolve();
+            }
+            rafId = requestAnimationFrame(phase3);
+          }
+          rafId = requestAnimationFrame(phase2);
+        }
+
+        rafId = requestAnimationFrame(phase1);
       });
     },
 

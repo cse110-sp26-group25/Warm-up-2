@@ -58,7 +58,6 @@ const UiPanels = (() => {
   const volumeMusic          = $('volume-music');
   const playerNameInput      = $('player-name');
   const btnResetData         = $('btn-reset-data');
-  const themeSelect          = $('theme-select');
 
   // ── Private helpers ────────────────────────────────────────────────
 
@@ -91,34 +90,6 @@ const UiPanels = (() => {
       chat:    `<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
     };
     return icons[icon] || icons.star;
-  }
-
-  // ── Theme helpers (Iteration 18) ──────────────────────────────────
-
-  /**
-   * Swap the logo text to match the active theme.
-   * @param {string} theme - Theme id ('robot' or 'lizard-hopper').
-   */
-  function _updateLogoText(theme) {
-    const el = document.querySelector('.logo-text');
-    if (!el) return;
-    if (theme === 'lizard-hopper') {
-      el.innerHTML = 'LIZARD-HOPPER <span class="logo-3000">3000</span>';
-    } else {
-      el.innerHTML = 'ROBO-SLOTS <span class="logo-3000">3000</span>';
-    }
-  }
-
-  /**
-   * Apply a theme: swap body class, update logo, rebuild reel strips, persist.
-   * @param {string} theme - Theme id ('robot' or 'lizard-hopper').
-   */
-  function _applyTheme(theme) {
-    document.body.className = document.body.className
-      .replace(/\btheme-\S+/g, '').trim() + ' theme-' + theme;
-    _updateLogoText(theme);
-    UiReels.buildAllStrips();
-    State.set('settings.theme', theme);
   }
 
   // ── Panel lifecycle ────────────────────────────────────────────────
@@ -160,71 +131,6 @@ const UiPanels = (() => {
     const btn = $('btn-' + name);
     if (btn) btn.addEventListener('click', () => _openPanel('panel-' + name));
   });
-
-  // ── Payout table ───────────────────────────────────────────────────
-  /**
-   * Render the payout table into the payouts panel content area.
-   * Reads multipliers directly from GameLogic.PAYOUTS and symbol icons
-   * from UiReels.SYMBOL_SVG. Jackpot symbol rows note pool triggers.
-   * @returns {void}
-   */
-  function _renderPayoutsTable() {
-    const el = $('payouts-table-content');
-    if (!el) return;
-    const P = GameLogic.PAYOUTS;
-
-    function _fmtCell(symId, tier) {
-      if (symId === 'jackpot') {
-        return tier === 'TWO'
-          ? `<td class="pt-nil">—</td>`
-          : `<td class="pt-jp">POOL</td>`;
-      }
-      const v = P[tier][symId];
-      return v === undefined
-        ? `<td class="pt-nil">—</td>`
-        : `<td>${v}&times;</td>`;
-    }
-
-    let html = `
-      <table class="payout-table">
-        <thead><tr>
-          <th>Symbol</th>
-          <th>&times;2</th>
-          <th>&times;3</th>
-          <th>&times;4</th>
-          <th>&times;5</th>
-        </tr></thead>
-        <tbody>`;
-
-    for (const sym of GameLogic.SYMBOLS) {
-      const isLizard = document.body.classList.contains('theme-lizard-hopper');
-      const svgMap = isLizard ? UiReels.SYMBOL_SVG_LIZARD_HOPPER : UiReels.SYMBOL_SVG;
-      const icon = svgMap[sym.id] || UiReels.SYMBOL_SVG[sym.id] || '';
-      html += `<tr>
-        <td>
-          <div class="pt-sym-cell">
-            <span class="pt-sym-icon">${icon}</span>
-            <span class="pt-sym-label">${_esc(sym.label)}</span>
-          </div>
-        </td>
-        ${_fmtCell(sym.id, 'TWO')}
-        ${_fmtCell(sym.id, 'THREE')}
-        ${_fmtCell(sym.id, 'FOUR')}
-        ${_fmtCell(sym.id, 'FIVE')}
-      </tr>`;
-    }
-
-    html += '</tbody></table>';
-    el.innerHTML = html;
-  }
-
-  const btnPayouts = $('btn-payouts');
-  if (btnPayouts) {
-    btnPayouts.addEventListener('click', () => {
-      _renderPayoutsTable();
-      _openPanel('panel-payouts');
-    });
-  }
 
   $$('.panel-close').forEach(btn => {
     btn.addEventListener('click', () => _closePanel(btn.dataset.close));
@@ -368,15 +274,6 @@ const UiPanels = (() => {
 
     document.body.dataset.reducedmotion = String(!!s.reducedMotion);
     document.body.dataset.epilepsysafe  = String(!!s.epilepsySafe);
-
-    // Iteration 18: theme
-    const theme = s.theme || 'robot';
-    if (themeSelect) themeSelect.value = theme;
-    document.body.className = document.body.className
-      .replace(/\btheme-\S+/g, '').trim() + ' theme-' + theme;
-    _updateLogoText(theme);
-    // Reel strips are rebuilt by ui.js after _applySettings on boot;
-    // on live changes the themeSelect listener calls _applyTheme instead.
   }
 
   // Hydrate on boot.
@@ -426,14 +323,6 @@ const UiPanels = (() => {
   if (toggleFastPlay) {
     toggleFastPlay.addEventListener('change', () => {
       State.set('settings.fastPlay', toggleFastPlay.checked);
-    });
-  }
-
-  // Iteration 18: theme selector
-  if (themeSelect) {
-    themeSelect.addEventListener('change', () => {
-      _applyTheme(themeSelect.value);
-      Audio.playClick();
     });
   }
 

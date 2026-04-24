@@ -132,6 +132,69 @@ const UiPanels = (() => {
     if (btn) btn.addEventListener('click', () => _openPanel('panel-' + name));
   });
 
+  // ── Payout table ───────────────────────────────────────────────────
+  /**
+   * Render the payout table into the payouts panel content area.
+   * Reads multipliers directly from GameLogic.PAYOUTS and symbol icons
+   * from UiReels.SYMBOL_SVG. Jackpot symbol rows note pool triggers.
+   * @returns {void}
+   */
+  function _renderPayoutsTable() {
+    const el = $('payouts-table-content');
+    if (!el) return;
+    const P = GameLogic.PAYOUTS;
+
+    function _fmtCell(symId, tier) {
+      if (symId === 'jackpot') {
+        return tier === 'TWO'
+          ? `<td class="pt-nil">—</td>`
+          : `<td class="pt-jp">POOL</td>`;
+      }
+      const v = P[tier][symId];
+      return v === undefined
+        ? `<td class="pt-nil">—</td>`
+        : `<td>${v}&times;</td>`;
+    }
+
+    let html = `
+      <table class="payout-table">
+        <thead><tr>
+          <th>Symbol</th>
+          <th>&times;2</th>
+          <th>&times;3</th>
+          <th>&times;4</th>
+          <th>&times;5</th>
+        </tr></thead>
+        <tbody>`;
+
+    for (const sym of GameLogic.SYMBOLS) {
+      const icon = UiReels.SYMBOL_SVG[sym.id] || '';
+      html += `<tr>
+        <td>
+          <div class="pt-sym-cell">
+            <span class="pt-sym-icon">${icon}</span>
+            <span class="pt-sym-label">${_esc(sym.label)}</span>
+          </div>
+        </td>
+        ${_fmtCell(sym.id, 'TWO')}
+        ${_fmtCell(sym.id, 'THREE')}
+        ${_fmtCell(sym.id, 'FOUR')}
+        ${_fmtCell(sym.id, 'FIVE')}
+      </tr>`;
+    }
+
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  }
+
+  const btnPayouts = $('btn-payouts');
+  if (btnPayouts) {
+    btnPayouts.addEventListener('click', () => {
+      _renderPayoutsTable();
+      _openPanel('panel-payouts');
+    });
+  }
+
   $$('.panel-close').forEach(btn => {
     btn.addEventListener('click', () => _closePanel(btn.dataset.close));
   });

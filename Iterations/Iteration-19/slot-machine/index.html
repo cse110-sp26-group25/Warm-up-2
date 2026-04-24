@@ -169,7 +169,24 @@
       <div class="win-flash-overlay" id="win-flash" aria-hidden="true"></div>
 
       <!-- The physical machine frame — a <section> groups everything. -->
-      <section class="machine-frame" aria-labelledby="jackpot-label-text">
+      <!--
+        Iteration 20 — `id="machine-frame"` added so ui.js can target
+        the frame element directly for the tactile-feedback screen shake
+        on big wins. The floating `#player-rank-badge` sits top-left
+        inside the frame and shows the player's live leaderboard rank;
+        it is independent of the existing `.rank-display` stat-row entry
+        (which shows the same information in tabular form for players
+        who look for it there).
+      -->
+      <section class="machine-frame" id="machine-frame" aria-labelledby="jackpot-label-text">
+
+        <!-- Rank badge — floats in the top-left corner of the frame. -->
+        <div class="player-rank-badge" id="player-rank-badge"
+             role="status" aria-live="polite" aria-label="Current leaderboard rank"
+             hidden>
+          <span class="rank-badge-label">RANK</span>
+          <span class="rank-badge-value" id="player-rank-badge-value">—</span>
+        </div>
 
         <!-- Top lights bar -->
         <div class="lights-bar top-lights" aria-hidden="true">

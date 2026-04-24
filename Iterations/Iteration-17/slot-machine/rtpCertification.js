@@ -1,5 +1,5 @@
 /**
- * rtpCertification.js — Build-time RTP certification loader (Iteration 17).
+ * rtpCertification.js — Build-time RTP certification loader (Iteration 18).
  *
  * At runtime the game fetches the pre-generated `rtp_certification.json`
  * file (produced by `scripts/verifyRtp.js` during the build step) and
@@ -107,6 +107,16 @@ const RtpCertification = (() => {
           'Payout table or jackpot settings have changed since certification.'
         );
       }
+    } else {
+      // Iteration 18: warn when the cert has no fingerprint so a developer
+      // regenerating the cert file is alerted that change-detection is off.
+      // This is a warning only — a missing fingerprint is not a hard failure
+      // because older cert files may legitimately omit the field.
+      console.warn(
+        '[RtpCertification] config_fingerprint is missing from the certificate. ' +
+        'Payout-table change detection is disabled. ' +
+        'Re-run `node scripts/verifyRtp.js` to regenerate a complete certificate.'
+      );
     }
 
     // within_target flag (set by the build script).

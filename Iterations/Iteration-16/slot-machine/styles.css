@@ -67,6 +67,17 @@
 
   /* Power Core dimensions */
   --core-size:   clamp(140px, 30vw, 180px);
+
+  /*
+   * Iteration 17 — Dynamic header height.
+   * Initial fallback value matches the default single-row header height.
+   * JavaScript (ui.js _updateHeaderHeight) reads the real header
+   * getBoundingClientRect().height on load, resize, and orientationchange,
+   * and writes the measured value back here so .toast-container always
+   * offsets from the *actual* rendered header regardless of wrapping.
+   */
+  --header-height:   62px;
+  --toast-top-gap:   10px;
 }
 
 /* ---------- Reset + Base ------------------------------------------------- */
@@ -1070,27 +1081,37 @@ body {
   100% { transform: scale(1);   opacity: 1; }
 }
 
-/* ---------- Achievement Toasts (Iteration 14 — top-center drop) --------- */
+/* ---------- Toast Notifications (Iteration 17 — priority queue) --------- */
 /*
-  Toasts now drop from the top of the viewport, centered horizontally
-  above the machine frame. The container is pinned under the header (which
-  is sticky at z-index: 100), with its own higher stacking layer (400),
-  and uses `pointer-events: none` so it never intercepts clicks.
+  Iteration 17 replaces the previous FIFO 3-toast cap with a full priority
+  queue (ToastManager module). Key CSS changes:
 
-  `top: 72px` clears the ~60px sticky header plus a small gutter; this
-  keeps the jackpot figure immediately below fully unobscured.
+  1. `.toast-container` top now uses `calc(var(--header-height) + var(--toast-top-gap))`
+     instead of a hardcoded `72px`. The `--header-height` CSS variable is
+     written by `_updateHeaderHeight()` in ui.js on every resize /
+     orientationchange, so the container always clears the real header even
+     when the nav wraps to a second line on mid-range tablets (780–1100px).
 
-  Stacking direction is now top-down (`column`) so the oldest toast sits
-  at the top of the stack and newer ones push down, reading naturally.
+  2. Per-priority border colours (.toast-p1 through .toast-p4) give players
+     an instant visual signal of notification importance without requiring
+     them to read the text first.
+
+  3. Stacking direction remains top-down (column) — oldest visible toast at
+     top, newest below, reading naturally downward.
 */
 .toast-container {
-  position: fixed; top: 72px; left: 50%;
+  position: fixed;
+  /* Dynamic offset: JS keeps --header-height current; CSS var is the fallback. */
+  top: calc(var(--header-height) + var(--toast-top-gap));
+  left: 50%;
   transform: translateX(-50%);
   z-index: 400;
   display: flex; flex-direction: column; gap: 8px;
   align-items: center; pointer-events: none;
   width: max-content; max-width: 92vw;
 }
+
+/* ── Base toast style ── */
 .toast {
   background: var(--surface2);
   border: 1px solid var(--yellow-sat);
@@ -1108,6 +1129,52 @@ body {
 }
 .toast-icon { font-size: 1.05rem; flex-shrink: 0; color: var(--yellow-sat); }
 .toast-body { flex: 1 1 auto; line-height: 1.3; }
+
+/*
+  ── Per-priority visual variants ────────────────────────────────────────
+  ToastManager adds .toast-p1/.toast-p2/.toast-p3/.toast-p4 classes that
+  correspond to PRIORITY.ACHIEVEMENT / BONUS / BIG_WIN / JACKPOT.
+  Each tier uses a distinct border colour and icon tint so players can
+  immediately distinguish a jackpot notification from an achievement.
+*/
+
+/* Priority 1 — Achievement (default yellow, already covered by .toast base) */
+.toast.toast-p1 {
+  border-color: var(--yellow-sat);
+  color: var(--yellow);
+}
+.toast.toast-p1 .toast-icon { color: var(--yellow-sat); }
+
+/* Priority 2 — Bonus Trigger (green accent) */
+.toast.toast-p2 {
+  border-color: var(--green-dark);
+  color: var(--green);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), var(--glow-green);
+}
+.toast.toast-p2 .toast-icon { color: var(--green); }
+
+/* Priority 3 — Big Win (bright yellow/gold with stronger glow) */
+.toast.toast-p3 {
+  border-color: var(--yellow-sat);
+  color: var(--yellow);
+  background: #2a2e1a;   /* warm dark background to reinforce the gold theme */
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.7),
+              0 0 16px rgba(255, 214, 0, 0.5);
+}
+.toast.toast-p3 .toast-icon { color: var(--yellow-sat); font-size: 1.15rem; }
+
+/* Priority 4 — Jackpot (red/gold dramatic treatment) */
+.toast.toast-p4 {
+  border-color: var(--red);
+  color: var(--yellow);
+  background: #2a1a1a;   /* warm dark red-tinged background */
+  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.8),
+              0 0 20px rgba(229, 57, 53, 0.55),
+              0 0 40px rgba(255, 214, 0, 0.25);
+  font-size: 0.88rem;    /* slightly larger for maximum legibility */
+  font-weight: 700;
+}
+.toast.toast-p4 .toast-icon { color: var(--red-light); font-size: 1.2rem; }
 
 /* Drop in from above, settle at resting position. */
 @keyframes toastDropIn {
@@ -1208,6 +1275,30 @@ body[data-epilepsysafe="true"] .win-label-display {
   .game-layout { grid-template-columns: 200px 1fr; }
   .panel-right { display: none; }
 }
+
+/*
+  Iteration 17 — Mid-range tablet layout (780px – 1100px).
+
+  At this width the header's flex row may wrap the nav buttons onto a second
+  line, increasing header height from ~62px to ~110px+. The old approach used
+  a hardcoded `top: 128px` in the ≤780px breakpoint — a best-guess that was
+  wrong for any screen between 780px and 1100px where wrapping can also occur.
+
+  Fix: the `--header-height` CSS variable is measured and updated by
+  `_updateHeaderHeight()` in ui.js on every resize/orientationchange event.
+  `.toast-container` always computes its top from `--header-height`, so no
+  per-breakpoint override is needed. The CSS variable fallback of 62px is safe
+  for desktop (single-row header); JS corrects it before the first spin can
+  produce a toast (boot delay is 600ms, plenty of time for measurement).
+
+  We still set a safe CSS-only fallback here for the tablet breakpoint in case
+  JS is blocked or very slow. 110px is conservative enough to clear a wrapped
+  two-row header on most devices.
+*/
+@media (min-width: 781px) and (max-width: 1100px) {
+  :root { --header-height: 110px; }
+}
+
 @media (max-width: 780px) {
   .game-layout  { grid-template-columns: 1fr; padding: 72px 10px 10px; }
   /* Iteration 14: keep the left panel as a vertical stack on mobile so
@@ -1221,9 +1312,14 @@ body[data-epilepsysafe="true"] .win-label-display {
   .machine-stat-row { gap: 5px; }
   .balance-amount, .winnings-amount, .rank-amount { font-size: 1rem; }
 
-  /* Header wraps on narrow screens, so push toasts further down to clear
-     the wrapped nav without overlapping the jackpot figure. */
-  .toast-container { top: 128px; }
+  /*
+    Iteration 17: removed the old hardcoded `top: 128px` override.
+    `.toast-container` uses `calc(var(--header-height) + var(--toast-top-gap))`
+    globally. On narrow screens the header wraps to ~128px and JS measures
+    that exact value into `--header-height`. The CSS-only fallback for this
+    breakpoint is set below as a safe starting value before JS can run.
+  */
+  :root { --header-height: 128px; }
   .toast { font-size: 0.76rem; padding: 8px 14px; }
 }
 @media (max-width: 480px) {

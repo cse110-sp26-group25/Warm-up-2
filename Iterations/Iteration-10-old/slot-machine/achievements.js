@@ -63,32 +63,10 @@ const Achievements = (() => {
     return newly;
   }
 
-  // Accumulate play-time once a second; paused when the tab is hidden so
-  // background dwell time does not count toward the "60 minutes" achievement.
-  let _timeTimer = null;
-
-  function _startTimer() {
-    if (_timeTimer !== null) return;
-    _timeTimer = setInterval(() => {
-      State.increment('playerStats.timePlayed', 1);
-    }, CONFIG.TIME_TICK_MS);
-  }
-
-  function _stopTimer() {
-    if (_timeTimer === null) return;
-    clearInterval(_timeTimer);
-    _timeTimer = null;
-  }
-
-  _startTimer();
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      _stopTimer();
-    } else {
-      _startTimer();
-    }
-  });
+  // Accumulate play-time once a second. Passive timer; survives by design.
+  setInterval(() => {
+    State.increment('playerStats.timePlayed', 1);
+  }, CONFIG.TIME_TICK_MS);
 
   return {
     /**

@@ -77,6 +77,13 @@
       <span class="particle p1"></span><span class="particle p2"></span>
       <span class="particle p3"></span><span class="particle p4"></span>
       <span class="particle p5"></span><span class="particle p6"></span>
+      <!-- p7–p10: extra low-intensity shapes for depth (hexagons + soft orbs). -->
+      <span class="particle p7"></span><span class="particle p8"></span>
+      <span class="particle p9"></span><span class="particle p10"></span>
+      <!-- circuit-trace drift lines — very subtle, aria-hidden -->
+      <span class="bg-trace bt1"></span>
+      <span class="bg-trace bt2"></span>
+      <span class="bg-trace bt3"></span>
     </div>
 
     <!-- LEFT: Robot mascot + mini chat -->
@@ -186,12 +193,15 @@
           <div class="payline" aria-hidden="true"></div>
         </div>
 
-        <!-- Pity meter progress bar with label. -->
-        <div class="pity-bar-wrapper" aria-hidden="true">
-          <span class="pity-bar-label">PITY</span>
-          <div class="pity-bar-track">
-            <div class="pity-bar-fill" id="pity-bar-fill"></div>
-          </div>
+        <!-- Luck warmup indicator — five subtle circuit nodes that heat up
+             during a losing streak and cool on win. Deliberately non-labeled
+             so the pity threshold isn't directly legible to the player. -->
+        <div class="luck-indicator" aria-hidden="true">
+          <span class="luck-node"></span>
+          <span class="luck-node"></span>
+          <span class="luck-node"></span>
+          <span class="luck-node"></span>
+          <span class="luck-node"></span>
         </div>
 
         <!-- Near-miss + result live-region. -->

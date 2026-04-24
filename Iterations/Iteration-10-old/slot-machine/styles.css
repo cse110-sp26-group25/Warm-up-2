@@ -1,16 +1,6 @@
 /* ==========================================================================
-   ROBO-SLOTS 3000 — Stylesheet (Iteration 14)
+   ROBO-SLOTS 3000 — Stylesheet (Iteration 08)
    Theme palette: Reds (#e53935), Yellows (#fff176), Greens (#69f0ae)
-
-   Iteration 14 changes:
-     • Toast container relocated to top-center, overlaying the machine
-       frame — tighter drop-in + drop-out animations.
-     • `.chat-mini` given `min-height: 180px` + `flex-shrink: 0` so it
-       stays usable on small viewports instead of collapsing.
-     • Header gets a `#storage-warning` memory-error badge, shown when
-       localStorage is blocked (private / incognito mode).
-     • Small-screen responsive rules tightened so the left-panel column
-       keeps the mascot, chat, and achievements in the right order.
    ========================================================================== */
 
 /* ---------- Design Tokens ------------------------------------------------ */
@@ -108,31 +98,6 @@ body {
 }
 .logo-3000  { color: var(--yellow); text-shadow: var(--glow-yell); }
 
-/* Iteration 14 — Incognito / private-mode "memory error" badge.
-   Shown when `State.isStorageAvailable()` returns false. The red
-   pulsing dot communicates "something is wrong" at a glance; the
-   hover tooltip explains the full consequence. */
-.storage-warning {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(229, 57, 53, 0.14);
-  border: 1px solid var(--red);
-  color: var(--red-light);
-  font-family: var(--font-mono); font-size: 0.72rem;
-  font-weight: 700; letter-spacing: 1px;
-  padding: 4px 10px; border-radius: 999px;
-  white-space: nowrap;
-  animation: storagePulse 2s ease-in-out infinite;
-}
-.storage-warning[hidden] { display: none; }
-.storage-warning-icon {
-  width: 14px; height: 14px; flex-shrink: 0;
-  color: var(--red-light);
-}
-@keyframes storagePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.0); }
-  50%      { box-shadow: 0 0 12px 2px rgba(229, 57, 53, 0.45); }
-}
-
 .top-nav    { display: flex; gap: 6px; flex-wrap: wrap; }
 .nav-btn {
   background: var(--surface); border: 1px solid var(--border);
@@ -152,7 +117,7 @@ body {
   max-width: 1400px; margin: 0 auto;
   display: grid;
   grid-template-columns: 220px 1fr 240px;
-  gap: 16px; padding: 72px 16px 16px;
+  gap: 16px; padding: 16px;
   min-height: calc(100vh - 62px);
   position: relative;
 }
@@ -178,9 +143,6 @@ body {
 .panel-left {
   display: flex; flex-direction: column; gap: 12px;
   position: relative; z-index: 1;
-  /* Iteration 14: keep mascot visible at the top; chat-mini and
-     achievements-widget scroll independently below. */
-  min-width: 0;
 }
 
 /* Robot mascot — now a real <button>, so strip default button chrome. */
@@ -276,20 +238,9 @@ body {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); overflow: hidden;
   display: flex; flex-direction: column;
-  /* Iteration 14: pin a floor so the chat doesn't collapse below a
-     usable height when the viewport is short. flex-shrink: 0 keeps
-     it from being squeezed when siblings (mascot, achievements) want
-     more room. */
-  min-height: 180px;
-  flex-shrink: 0;
 }
 .chat-messages {
-  /* Iteration 14: let the chat log grow to fill whatever the chat-mini
-     container gets, rather than hard-coding a fixed height that
-     conflicts with the new min-height rule. */
-  flex: 1 1 auto;
-  min-height: 120px;
-  overflow-y: auto; padding: 8px;
+  height: 120px; overflow-y: auto; padding: 8px;
   font-size: 0.75rem; display: flex; flex-direction: column; gap: 4px;
 }
 .chat-message {
@@ -324,7 +275,7 @@ body {
   padding: 20px;
   width: 100%; max-width: 560px;
   box-shadow: 0 0 40px rgba(229,57,53,0.30), inset 0 0 20px rgba(0,0,0,0.4);
-  display: flex; flex-direction: column; gap: 16px;
+  display: flex; flex-direction: column; gap: 14px;
   position: relative;
 }
 
@@ -412,14 +363,14 @@ body {
   transition: transform 0s;
 }
 
-/* ── Motion-blur states (rAF-driven animation, Iteration 12) ─────────
-   Transform is driven frame-by-frame by requestAnimationFrame in
-   uiReels.js. These classes control only filter + opacity — they
-   transition naturally via CSS while rAF owns the translateY.
+/* ── Motion-blur states (Iteration 09: pure CSS, no SVG filter) ──────
+   Replaces the SVG <feGaussianBlur> approach from Iteration 08.
+   CSS blur() is GPU-composited and avoids the SVG-filter rendering
+   jank seen in Firefox and Safari.
 
    .is-spinning      : heavy CSS blur + opacity dip (strip at full speed)
    .is-decelerating  : light blur as strip nears its target stop
-   .is-settling      : no blur; overshoot + bounce-back phase
+   .is-settling      : no blur; overshoot + bounce-back only
    -------------------------------------------------------------------- */
 .reel-strip.is-spinning {
   filter: blur(2px);
@@ -457,42 +408,18 @@ body {
   pointer-events: none; z-index: 1;
 }
 
-/* Pity meter — label + track */
-.pity-bar-wrapper {
-  display: flex; align-items: center; gap: 6px;
-}
-.pity-bar-label {
-  font-family: var(--font-mono); font-size: 0.52rem;
-  letter-spacing: 1px; color: var(--text-dim); flex-shrink: 0;
-  opacity: 0.55;
-}
-.pity-bar-track {
-  flex: 1; height: 6px; border-radius: 3px;
-  background: rgba(255,255,255,0.06);
-  overflow: hidden;
-}
-.pity-bar-fill {
-  height: 100%; width: 0%; border-radius: 3px;
-  background: rgba(105,240,174,0.35);
-  transition: width 0.35s ease-out, background-color 0.5s ease;
-}
-
 /* Near-miss + result live regions */
 .near-miss-bar {
   min-height: 24px; text-align: center;
   font-family: var(--font-mono); font-size: 0.85rem;
   color: var(--yellow); opacity: 0;
   transition: opacity 0.3s;
-  background: rgba(0,0,0,0.65);
-  border-radius: 20px; padding: 3px 16px;
 }
 .near-miss-bar.visible { opacity: 1; }
 .result-display {
   text-align: center; font-family: var(--font-mono);
   font-size: 1rem; min-height: 28px;
   color: var(--green); font-weight: 700;
-  background: rgba(0,0,0,0.65);
-  border-radius: 20px; padding: 4px 16px;
 }
 
 /* Coin burst */
@@ -548,7 +475,7 @@ body {
 .power-core {
   position: relative;
   width: var(--core-size); height: var(--core-size);
-  margin: 14px auto 6px;
+  margin: 6px auto 2px;
   background: transparent; border: none; padding: 0;
   cursor: pointer; outline: none;
   font: inherit; color: inherit;
@@ -654,31 +581,19 @@ body {
   to   { box-shadow: inset 0 0 18px rgba(0,0,0,0.7), 0 0 0 14px rgba(255,82,82,0); }
 }
 
-/* Machine stat row — balance / winnings / rank side-by-side */
-.machine-stat-row {
-  display: flex; gap: 8px;
-}
-
-/* Shared base for all three stat figures */
-.balance-display,
-.winnings-display,
-.rank-display {
-  flex: 1; text-align: center; font-family: var(--font-mono);
-  padding: 8px 6px; background: var(--bg);
-  border-radius: var(--radius);
-}
-
 /* Winnings figure */
 .winnings-display {
-  border: 2px solid var(--green);
+  text-align: center; font-family: var(--font-mono);
+  padding: 8px; background: var(--bg);
+  border: 2px solid var(--green); border-radius: var(--radius);
   box-shadow: var(--glow-green);
 }
 .winnings-label {
-  display: block; font-size: 0.60rem; letter-spacing: 2px;
+  display: block; font-size: 0.65rem; letter-spacing: 3px;
   color: var(--text-dim); margin-bottom: 2px;
 }
 .winnings-amount {
-  font-size: 1.2rem; font-weight: 900;
+  font-size: 1.6rem; font-weight: 900;
   color: var(--green); text-shadow: var(--glow-green);
   display: block;
 }
@@ -689,58 +604,10 @@ body {
   100% { transform: scale(1);   color: var(--green); }
 }
 
-/* Balance figure */
-.balance-display {
-  border: 2px solid var(--yellow-sat);
-}
-.balance-display.balance-low {
-  border-color: var(--red); box-shadow: var(--glow-red);
-}
-.balance-label {
-  display: block; font-size: 0.60rem; letter-spacing: 2px;
-  color: var(--text-dim); margin-bottom: 2px;
-}
-.balance-amount {
-  font-size: 1.2rem; font-weight: 900;
-  color: var(--yellow); display: block;
-}
-.balance-display.balance-low .balance-amount { color: var(--red); }
-.balance-amount.bump { animation: winsBump 0.4s ease-out; }
-
-/* Rank figure */
-.rank-display {
-  border: 2px solid var(--border);
-}
-.rank-label {
-  display: block; font-size: 0.60rem; letter-spacing: 2px;
-  color: var(--text-dim); margin-bottom: 2px;
-}
-.rank-amount {
-  font-size: 1rem; font-weight: 900;
-  color: var(--text-dim); display: block;
-}
-.rank-amount.ranked { color: var(--green); text-shadow: var(--glow-green); }
-
-/* ---------- Left Panel — achievements overflow management -------------- */
-.panel-left {
-  align-self: start;    /* don't stretch to grid row height */
-  max-height: calc(100vh - 90px);
-  overflow-y: auto;
-}
-
-/* Achievements widget inside left panel — compact grid */
-.panel-left .achievements-widget {
-  flex-shrink: 0;
-}
-.panel-left .achievements-grid {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-/* ---------- Right Panel (leaderboard + stats) ------------------- */
+/* ---------- Right Panel (leaderboard + stats + achievements) ------------ */
 .panel-right {
   display: flex; flex-direction: column; gap: 12px;
   position: relative; z-index: 1;
-  align-self: start;
 }
 .widget-title {
   font-family: var(--font-mono); font-size: 0.72rem;
@@ -813,32 +680,6 @@ body {
   opacity: 0; pointer-events: none; transition: opacity 0.2s;
   z-index: 50;
 }
-
-/* ---------- Payout Table ------------------------------------------------- */
-.payout-table {
-  width: 100%; border-collapse: collapse;
-  font-family: var(--font-mono); font-size: 0.82rem;
-}
-.payout-table th {
-  color: var(--text-dim); letter-spacing: 2px; font-size: 0.68rem;
-  padding: 6px 4px; text-align: center;
-  border-bottom: 1px solid var(--border);
-  text-transform: uppercase;
-}
-.payout-table th:first-child { text-align: left; padding-left: 0; }
-.payout-table td {
-  padding: 7px 4px; text-align: center;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  color: var(--green);
-}
-.payout-table td:first-child { text-align: left; padding-left: 0; }
-.pt-sym-cell {
-  display: flex; align-items: center; gap: 8px;
-}
-.pt-sym-icon { width: 36px; height: 36px; flex-shrink: 0; }
-.pt-sym-label { color: var(--text); font-weight: 700; font-size: 0.78rem; }
-.pt-jp  { color: var(--yellow); font-weight: 700; }
-.pt-nil { color: var(--text-dim); }
 
 /* ---------- Slide-over Panels ------------------------------------------- */
 .panel-overlay {
@@ -977,62 +818,6 @@ body {
   100% { transform: scale(1);   opacity: 1; }
 }
 
-/* ---------- Achievement Toasts (Iteration 14 — top-center drop) --------- */
-/*
-  Toasts now drop from the top of the viewport, centered horizontally
-  above the machine frame. The container is pinned under the header (which
-  is sticky at z-index: 100), with its own higher stacking layer (400),
-  and uses `pointer-events: none` so it never intercepts clicks.
-
-  `top: 72px` clears the ~60px sticky header plus a small gutter; this
-  keeps the jackpot figure immediately below fully unobscured.
-
-  Stacking direction is now top-down (`column`) so the oldest toast sits
-  at the top of the stack and newer ones push down, reading naturally.
-*/
-.toast-container {
-  position: fixed; top: 72px; left: 50%;
-  transform: translateX(-50%);
-  z-index: 400;
-  display: flex; flex-direction: column; gap: 8px;
-  align-items: center; pointer-events: none;
-  width: max-content; max-width: 92vw;
-}
-.toast {
-  background: var(--surface2);
-  border: 1px solid var(--yellow-sat);
-  color: var(--yellow);
-  font-family: var(--font-mono); font-size: 0.82rem;
-  padding: 10px 16px; border-radius: var(--radius);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), var(--glow-yell);
-  display: flex; align-items: center; gap: 10px;
-  max-width: min(420px, 90vw);
-  pointer-events: none;
-  animation: toastDropIn 0.3s cubic-bezier(0.2, 0, 0.2, 1) forwards;
-}
-.toast.toast-out {
-  animation: toastDropOut 0.3s ease-in forwards;
-}
-.toast-icon { font-size: 1.05rem; flex-shrink: 0; color: var(--yellow-sat); }
-.toast-body { flex: 1 1 auto; line-height: 1.3; }
-
-/* Drop in from above, settle at resting position. */
-@keyframes toastDropIn {
-  from { transform: translateY(-120%); opacity: 0; }
-  to   { transform: translateY(0);     opacity: 1; }
-}
-/* Drop back out upward so multiple toasts don't visually swap axes. */
-@keyframes toastDropOut {
-  from { transform: translateY(0);     opacity: 1; }
-  to   { transform: translateY(-120%); opacity: 0; }
-}
-
-body[data-reducedmotion="true"] .toast,
-body[data-reducedmotion="true"] .toast.toast-out {
-  animation: none !important;
-  transform: none !important;
-}
-
 /* ---------- Accessibility overrides ------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1068,22 +853,11 @@ body[data-epilepsysafe="true"] .jackpot-amount {
   .panel-right { display: none; }
 }
 @media (max-width: 780px) {
-  .game-layout  { grid-template-columns: 1fr; padding: 72px 10px 10px; }
-  /* Iteration 14: keep the left panel as a vertical stack on mobile so
-     the mascot → chat → achievements reading order is preserved. Remove
-     the desktop overflow cap since there's no horizontal room for a
-     fixed side column. */
-  .panel-left   { flex-direction: column; max-height: none; overflow-y: visible; }
-  /* Chat-mini keeps its min-height (set globally) — this ensures it
-     remains usable on phones instead of collapsing. */
+  .game-layout  { grid-template-columns: 1fr; padding: 10px; }
+  .panel-left   { flex-direction: row; align-items: flex-start; }
+  .robot-mascot { flex: 0 0 120px; }
+  .chat-mini    { flex: 1; }
   .machine-frame { max-width: 100%; }
-  .machine-stat-row { gap: 5px; }
-  .balance-amount, .winnings-amount, .rank-amount { font-size: 1rem; }
-
-  /* Header wraps on narrow screens, so push toasts further down to clear
-     the wrapped nav without overlapping the jackpot figure. */
-  .toast-container { top: 128px; }
-  .toast { font-size: 0.76rem; padding: 8px 14px; }
 }
 @media (max-width: 480px) {
   .logo-text  { font-size: 1rem; }
@@ -1091,8 +865,4 @@ body[data-epilepsysafe="true"] .jackpot-amount {
   .panel-left { flex-direction: column; }
   .bet-buttons { gap: 4px; }
   .bet-btn     { padding: 5px 8px; font-size: 0.78rem; min-width: 42px; }
-  /* The storage badge's label can wrap on very narrow screens — hide
-     it and lean on the icon alone plus hover/title for context. */
-  .storage-warning-label { display: none; }
-  .storage-warning { padding: 4px 6px; }
 }

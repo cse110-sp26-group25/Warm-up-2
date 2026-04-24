@@ -20,7 +20,7 @@ const State = (() => {
   const STORAGE_KEY = 'robo_slots_state_v1';
 
   /** @type {number} Current schema version. Bump when fields are added/removed. */
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = 3;
 
   /** @type {number} Debounce window for persistence writes (ms). */
   const SAVE_DEBOUNCE_MS = 400;
@@ -65,6 +65,7 @@ const State = (() => {
         name:  '',
         color: '#fff176',
       },
+      balance:       200,
       totalWinnings: 0,
       spinCount:     0,
       pityMeter:     0,
@@ -117,6 +118,12 @@ const State = (() => {
       if (!saved.settings) saved.settings = {};
       if (saved.settings.fastPlay === undefined) saved.settings.fastPlay = false;
       saved.version = 2;
+    }
+
+    // v2 → v3: added `balance` (starting credit system).
+    if (v < 3) {
+      if (saved.balance === undefined) saved.balance = 200;
+      saved.version = 3;
     }
 
     // Future migrations: add new `if (v < N)` blocks here.

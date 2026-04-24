@@ -93,6 +93,7 @@ const State = (() => {
         reducedMotion: false,
         epilepsySafe:  false,
         fastPlay:      false,   // Iteration 09: Fast Play toggle
+        theme:         'robot', // Iteration 18: theme selection
       },
       jackpot: 1000,
     };

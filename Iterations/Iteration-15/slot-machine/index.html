@@ -138,6 +138,19 @@
         <span class="robot-bubble" id="robot-bubble" aria-live="polite" aria-atomic="true"></span>
       </button>
 
+      <!--
+        Iteration 16 — widget order: achievements come BEFORE chat-mini
+        so progress is always visible at the top of the panel and the
+        chat log (which grows as the player converses) pushes downward
+        rather than burying the achievement tiles.
+      -->
+
+      <!-- Achievements widget -->
+      <section class="achievements-widget" aria-labelledby="ach-title-left">
+        <h2 id="ach-title-left" class="widget-title">ACHIEVEMENTS</h2>
+        <div class="achievements-grid" id="achievements-grid"></div>
+      </section>
+
       <!-- Mini chat widget -->
       <section class="chat-mini" aria-label="Quick chat with ROBO">
         <div class="chat-messages" id="chat-messages" role="log" aria-live="polite"></div>
@@ -146,12 +159,6 @@
                  aria-label="Chat message input" />
           <button type="submit" aria-label="Send message">&#9658;</button>
         </form>
-      </section>
-
-      <!-- Achievements widget (moved to left panel) -->
-      <section class="achievements-widget" aria-labelledby="ach-title-left">
-        <h2 id="ach-title-left" class="widget-title">ACHIEVEMENTS</h2>
-        <div class="achievements-grid" id="achievements-grid"></div>
       </section>
     </aside>
 

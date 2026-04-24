@@ -15,9 +15,14 @@
  * The AudioContext is created lazily and must be unlocked via a user
  * gesture (browser policy) — `Audio.unlock()` is called on first click.
  *
- * Iteration 14:
- *   • Added `playDenied()` — mechanical "rejected" buzz for insufficient-
- *     balance spin attempts and other hard rejections.
+ * Iteration 16 — no functional changes. The 50 ms silent lead-in in
+ * `_playDenied()` (the Iteration 14 mobile-audio warmup fix) is retained
+ * as-is; it remains the authoritative implementation. Header restamped
+ * only for iteration continuity.
+ *
+ * Iteration 14 — added `playDenied()` with a 50 ms silent lead-in that
+ * schedules all samples after the AudioContext finishes resuming, so the
+ * first buffer frame isn't dropped on mobile Safari / Chrome.
  */
 const Audio = (() => {
 

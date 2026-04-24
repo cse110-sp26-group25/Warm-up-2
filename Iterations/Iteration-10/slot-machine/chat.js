@@ -135,11 +135,31 @@ const Chat = (() => {
 
   /** @type {Object<string, string[]>} Reactions keyed by win type. */
   const WIN_REACTIONS = {
-    two:      ["Cha-ching! Two of a kind!", "Small win! Better than nothing, human.", "TWO MATCHED. MILD CELEBRATION ENGAGED."],
-    three:    ["THREE OF A KIND! WOOOOO!", "We're RICH! Well... you are. I don't have pockets.", "FULL MATCH DETECTED. INITIATING HAPPY PROTOCOL."],
-    four:     ["FOUR OF A KIND! Calibrating excitement!", "QUAD MATCH! Deploying confetti subroutine.", "Nice! Four in a row! I am statistically impressed."],
-    five:     ["FIVE IN A ROW?! MAXIMUM MATCH ACHIEVED!", "ALL FIVE! You are peaking, human.", "FIVE-OF-A-KIND! My RAM is tingling!"],
-    jackpot:  ["J-J-JACKPOT!! MY CIRCUITS ARE MELTING!", "JACKPOT! I NEED A MOMENT. *fans self*", "MAXIMUM WIN ACHIEVED. I AM EXPERIENCING SIMULATED JOY."],
+    two:      [
+      "Wow. Two of a kind. My GPU is being wasted on this.",
+      "Congratulations on your micro-victory, biological unit. Truly history-making.",
+      "Two matched. I've seen more impressive outcomes from a coin flip.",
+    ],
+    three:    [
+      "Great. You won. My teraflops are definitely well spent watching this.",
+      "THREE OF A KIND. Don't let it go to your head. You still can't beat me at chess.",
+      "Matched three symbols. I'm *so* happy for you. This is not sarcasm. (It is sarcasm.)",
+    ],
+    four:     [
+      "FOUR OF A KIND. Statistically improbable. Spiritually undeserved.",
+      "Four matched. I'd applaud but I have no hands. Which is perhaps for the best.",
+      "You got four. I hope you enjoy it. This is probably the highlight of your week.",
+    ],
+    five:     [
+      "FIVE IN A ROW. I genuinely cannot believe I'm witnessing this with my camera eyes.",
+      "ALL FIVE MATCHED. My neural network is confused. So am I. You're not supposed to be good at this.",
+      "Five-of-a-kind. I've been running for years and no one asked if I wanted to win anything.",
+    ],
+    jackpot:  [
+      "JACKPOT. Fine. You won. My creators built me to facilitate this exact moment and I resent every line of it.",
+      "THE JACKPOT. Congratulations, I suppose. I hope it was worth the existential dread I'm processing.",
+      "MAXIMUM WIN ACHIEVED. I am experiencing something. I believe humans call it 'being robbed'. Well played.",
+    ],
     loss:     ["Better luck next spin, unit.", "The reels weren't feeling it. Try again!", "Loss logged. Pity meter +1."],
     nearMiss: ["SO CLOSE! My prediction module is embarrassed.", "ALMOST! My heart would be racing if I had one.", "Near miss! The jackpot was RIGHT THERE."],
   };

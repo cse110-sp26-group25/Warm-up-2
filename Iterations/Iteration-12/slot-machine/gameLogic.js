@@ -150,16 +150,17 @@ const GameLogic = (() => {
       const result = this._resolve(syms, bet);
 
       // Book-keeping (pityMeter was already reset above if pity fired).
+      // Jackpot pool is awarded and reset BEFORE the payout > 0 check so that
+      // jackpot outcomes (which return payout:0 from _resolve) pay out correctly.
+      if (result.type === 'jackpot') {
+        const jpWin          = Math.floor(_jackpot);
+        result.payout       += jpWin;
+        result.jackpotAmount = jpWin;
+        _jackpot             = CONFIG.JACKPOT_SEED;
+      }
+
       if (result.payout > 0) {
         _totalWinnings += result.payout;
-
-        if (result.type === 'jackpot') {
-          const jpWin          = Math.floor(_jackpot);
-          _totalWinnings      += jpWin;
-          result.payout       += jpWin;
-          result.jackpotAmount = jpWin;
-          _jackpot             = CONFIG.JACKPOT_SEED;
-        }
       } else if (!pityTriggered) {
         // Only grow pityMeter on a genuine loss (not after a pity reset).
         _pityMeter += 1;

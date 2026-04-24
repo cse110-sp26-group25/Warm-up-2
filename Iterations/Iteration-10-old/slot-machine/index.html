@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ROBO-SLOTS 3000</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1a2e'/%3E%3Crect x='7' y='11' width='18' height='14' rx='3' fill='%23e53935'/%3E%3Crect x='11' y='6' width='10' height='6' rx='2' fill='%23e53935'/%3E%3Crect x='8' y='14' width='6' height='5' rx='1' fill='%23fff176'/%3E%3Crect x='18' y='14' width='6' height='5' rx='1' fill='%23fff176'/%3E%3Crect x='9' y='20' width='14' height='3' rx='1' fill='%2369f0ae'/%3E%3Crect x='3' y='15' width='4' height='7' rx='2' fill='%23c62828'/%3E%3Crect x='25' y='15' width='4' height='7' rx='2' fill='%23c62828'/%3E%3C/svg%3E" />
   <meta name="description" content="A robot-themed browser slot machine game." />
   <meta name="color-scheme" content="dark" />
 </head>
@@ -36,31 +35,11 @@
           <rect x="40" y="20" width="4"  height="8" rx="2" fill="#e53935"/>
         </svg>
         <h1 class="logo-text">ROBO-SLOTS <span class="logo-3000">3000</span></h1>
-
-        <!--
-          Iteration 14 — Memory Error badge.
-          Revealed by ui.js when `State.isStorageAvailable()` returns false
-          (private/incognito browsing). The `title` attribute gives screen-
-          reader and hover-tooltip context; the visible label is hidden on
-          very narrow viewports via the `.storage-warning-label` rule.
-        -->
-        <span id="storage-warning" class="storage-warning" role="status"
-              aria-live="polite" aria-hidden="true" hidden
-              title="Private browsing detected — your progress will NOT be saved this session.">
-          <svg class="storage-warning-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 2 L22 20 L2 20 Z" fill="none" stroke="currentColor"
-                  stroke-width="2.2" stroke-linejoin="round"/>
-            <line x1="12" y1="9"  x2="12" y2="14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-            <circle cx="12" cy="17" r="1.2" fill="currentColor"/>
-          </svg>
-          <span class="storage-warning-label">MEMORY ERROR</span>
-        </span>
       </div>
       <nav class="top-nav" aria-label="Main navigation">
         <button class="nav-btn" id="btn-leaderboard"  aria-controls="panel-leaderboard">Leaderboard</button>
         <button class="nav-btn" id="btn-achievements" aria-controls="panel-achievements">Achievements</button>
         <button class="nav-btn" id="btn-stats"        aria-controls="panel-stats">Stats</button>
-        <button class="nav-btn" id="btn-payouts"      aria-controls="panel-payouts">Payouts</button>
         <button class="nav-btn" id="btn-chat"         aria-controls="panel-chat">Chat</button>
         <button class="nav-btn" id="btn-settings"     aria-controls="panel-settings">Settings</button>
       </nav>
@@ -77,13 +56,6 @@
       <span class="particle p1"></span><span class="particle p2"></span>
       <span class="particle p3"></span><span class="particle p4"></span>
       <span class="particle p5"></span><span class="particle p6"></span>
-      <!-- p7–p10: extra low-intensity shapes for depth (hexagons + soft orbs). -->
-      <span class="particle p7"></span><span class="particle p8"></span>
-      <span class="particle p9"></span><span class="particle p10"></span>
-      <!-- circuit-trace drift lines — very subtle, aria-hidden -->
-      <span class="bg-trace bt1"></span>
-      <span class="bg-trace bt2"></span>
-      <span class="bg-trace bt3"></span>
     </div>
 
     <!-- LEFT: Robot mascot + mini chat -->
@@ -138,19 +110,6 @@
         <span class="robot-bubble" id="robot-bubble" aria-live="polite" aria-atomic="true"></span>
       </button>
 
-      <!--
-        Iteration 16 — widget order: achievements come BEFORE chat-mini
-        so progress is always visible at the top of the panel and the
-        chat log (which grows as the player converses) pushes downward
-        rather than burying the achievement tiles.
-      -->
-
-      <!-- Achievements widget -->
-      <section class="achievements-widget" aria-labelledby="ach-title-left">
-        <h2 id="ach-title-left" class="widget-title">ACHIEVEMENTS</h2>
-        <div class="achievements-grid" id="achievements-grid"></div>
-      </section>
-
       <!-- Mini chat widget -->
       <section class="chat-mini" aria-label="Quick chat with ROBO">
         <div class="chat-messages" id="chat-messages" role="log" aria-live="polite"></div>
@@ -169,24 +128,7 @@
       <div class="win-flash-overlay" id="win-flash" aria-hidden="true"></div>
 
       <!-- The physical machine frame — a <section> groups everything. -->
-      <!--
-        Iteration 20 — `id="machine-frame"` added so ui.js can target
-        the frame element directly for the tactile-feedback screen shake
-        on big wins. The floating `#player-rank-badge` sits top-left
-        inside the frame and shows the player's live leaderboard rank;
-        it is independent of the existing `.rank-display` stat-row entry
-        (which shows the same information in tabular form for players
-        who look for it there).
-      -->
-      <section class="machine-frame" id="machine-frame" aria-labelledby="jackpot-label-text">
-
-        <!-- Rank badge — floats in the top-left corner of the frame. -->
-        <div class="player-rank-badge" id="player-rank-badge"
-             role="status" aria-live="polite" aria-label="Current leaderboard rank"
-             hidden>
-          <span class="rank-badge-label">RANK</span>
-          <span class="rank-badge-value" id="player-rank-badge-value">—</span>
-        </div>
+      <section class="machine-frame" aria-labelledby="jackpot-label-text">
 
         <!-- Top lights bar -->
         <div class="lights-bar top-lights" aria-hidden="true">
@@ -215,17 +157,6 @@
           <div class="reel-divider" aria-hidden="true"></div>
           <div class="reel-container" id="reel-4"><div class="reel-strip" id="strip-4"></div></div>
           <div class="payline" aria-hidden="true"></div>
-        </div>
-
-        <!-- Luck warmup indicator — five subtle circuit nodes that heat up
-             during a losing streak and cool on win. Deliberately non-labeled
-             so the pity threshold isn't directly legible to the player. -->
-        <div class="luck-indicator" aria-hidden="true">
-          <span class="luck-node"></span>
-          <span class="luck-node"></span>
-          <span class="luck-node"></span>
-          <span class="luck-node"></span>
-          <span class="luck-node"></span>
         </div>
 
         <!-- Near-miss + result live-region. -->
@@ -278,21 +209,11 @@
           <span class="power-core-glow" aria-hidden="true"></span>
         </button>
 
-        <!-- Balance / winnings / rank row. -->
-        <div class="machine-stat-row">
-          <figure class="balance-display" id="balance-display">
-            <figcaption class="balance-label">BALANCE</figcaption>
-            <output class="balance-amount" id="balance-amount">$200.00</output>
-          </figure>
-          <figure class="winnings-display">
-            <figcaption class="winnings-label">WON</figcaption>
-            <output class="winnings-amount" id="winnings-amount" for="spin-btn">$0.00</output>
-          </figure>
-          <figure class="rank-display">
-            <figcaption class="rank-label">RANK</figcaption>
-            <output class="rank-amount" id="rank-display">UNRANKED</output>
-          </figure>
-        </div>
+        <!-- Winnings display. -->
+        <figure class="winnings-display">
+          <figcaption class="winnings-label">WON</figcaption>
+          <output class="winnings-amount" id="winnings-amount" for="spin-btn">$0.00</output>
+        </figure>
 
         <!-- Bottom lights bar. -->
         <div class="lights-bar bottom-lights" aria-hidden="true">
@@ -304,8 +225,8 @@
       </section>
     </section>
 
-    <!-- RIGHT: Leaderboard + stats -->
-    <aside class="panel-right" aria-label="Leaderboard and stats">
+    <!-- RIGHT: Leaderboard + stats + achievements -->
+    <aside class="panel-right" aria-label="Leaderboard, stats, and achievements">
 
       <section class="leaderboard-widget" aria-labelledby="lb-title">
         <h2 id="lb-title" class="widget-title">TOP UNITS</h2>
@@ -321,6 +242,11 @@
           <div class="stat-row"><dt>Jackpots</dt>     <dd id="stat-jackpots">0</dd></div>
           <div class="stat-row"><dt>Time Played</dt>  <dd id="stat-time">0m</dd></div>
         </dl>
+      </section>
+
+      <section class="achievements-widget" aria-labelledby="ach-title">
+        <h2 id="ach-title" class="widget-title">ACHIEVEMENTS</h2>
+        <div class="achievements-grid" id="achievements-grid"></div>
       </section>
     </aside>
   </main>
@@ -365,17 +291,6 @@
       </label>
     </section>
 
-    <section class="settings-group" aria-label="Theme">
-      <h3>Theme</h3>
-      <label class="toggle-label">
-        <span>Game Theme</span>
-        <select id="theme-select" aria-label="Select game theme">
-          <option value="robot">ROBO-SLOTS (Robot)</option>
-          <option value="lizard-hopper">Lizard Hopper</option>
-        </select>
-      </label>
-    </section>
-
     <section class="settings-group" aria-label="Player avatar">
       <h3>Avatar</h3>
       <div class="avatar-row">
@@ -404,15 +319,6 @@
         Wipe Saved Data
       </button>
     </section>
-  </aside>
-
-  <!-- Payout table panel -->
-  <aside class="slide-panel" id="panel-payouts" role="dialog"
-         aria-modal="true" aria-labelledby="payouts-panel-title" hidden>
-    <button type="button" class="panel-close" data-close="panel-payouts"
-            aria-label="Close payout table">&#x2715;</button>
-    <h2 id="payouts-panel-title">Payout Table</h2>
-    <div id="payouts-table-content"></div>
   </aside>
 
   <!-- Full leaderboard -->
@@ -457,9 +363,6 @@
     </form>
   </aside>
 
-  <!-- Achievement toast container (bottom-right, stacks upward). -->
-  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
-
   <!-- Full-screen win celebration. -->
   <div class="win-celebration" id="win-celebration" aria-hidden="true" role="status">
     <div class="win-amount-display" id="win-amount-display"></div>
@@ -490,14 +393,6 @@
   <script src="uiReels.js"></script>
   <script src="uiMascot.js"></script>
   <script src="uiPanels.js"></script>
-  <!--
-    Iteration 17 — new modules (load order matters):
-      toastManager    → no dependencies; must load before ui.js
-      rtpCertification → depends on GameLogic (for CONFIG fingerprint);
-                         must load after gameLogic.js and before ui.js
-  -->
-  <script src="toastManager.js"></script>
-  <script src="rtpCertification.js"></script>
   <script src="ui.js"></script>
 </body>
 </html>

@@ -1,15 +1,16 @@
 /**
- * state.js — Centralized, persistent application state (Iteration 14).
+ * state.js — Centralized, persistent application state (Iteration 16).
  *
  * Single source of truth for data that must survive a page refresh:
  *   • totalWinnings, spinCount, pityMeter, balance
  *   • unlockedAchievements, playerStats
  *   • jackpot, player (name, color), settings, meta
  *
- * Iteration 14 — no schema change from Iteration 13; the
- * `isStorageAvailable()` API (added in Iteration 09) is now actively
- * consumed by `ui.js` to surface the header memory-error badge when
- * private/incognito storage is blocked. The module itself is unchanged.
+ * Iteration 16 — no schema change. The `isStorageAvailable()` API
+ * continues to be consumed by `ui.js` for the header memory-error
+ * badge, which now transitions to a stable `.static` state after 10 s
+ * (UI change only; this module is unchanged). Header restamped for
+ * iteration continuity.
  *
  * Prior-iteration highlights preserved here:
  *   • `_checkStorageAvailable()` — detects private/incognito mode at boot.

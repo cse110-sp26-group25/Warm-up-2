@@ -240,7 +240,7 @@ body {
   display: flex; flex-direction: column;
 }
 .chat-messages {
-  height: 120px; overflow-y: auto; padding: 8px;
+  height: 200px; overflow-y: auto; padding: 8px;
   font-size: 0.75rem; display: flex; flex-direction: column; gap: 4px;
 }
 .chat-message {
@@ -408,9 +408,17 @@ body {
   pointer-events: none; z-index: 1;
 }
 
-/* Pity meter progress bar */
+/* Pity meter — label + track */
 .pity-bar-wrapper {
-  height: 6px; border-radius: 3px;
+  display: flex; align-items: center; gap: 6px;
+}
+.pity-bar-label {
+  font-family: var(--font-mono); font-size: 0.52rem;
+  letter-spacing: 1px; color: var(--text-dim); flex-shrink: 0;
+  opacity: 0.55;
+}
+.pity-bar-track {
+  flex: 1; height: 6px; border-radius: 3px;
   background: rgba(255,255,255,0.06);
   overflow: hidden;
 }
@@ -597,19 +605,31 @@ body {
   to   { box-shadow: inset 0 0 18px rgba(0,0,0,0.7), 0 0 0 14px rgba(255,82,82,0); }
 }
 
+/* Machine stat row — balance / winnings / rank side-by-side */
+.machine-stat-row {
+  display: flex; gap: 8px;
+}
+
+/* Shared base for all three stat figures */
+.balance-display,
+.winnings-display,
+.rank-display {
+  flex: 1; text-align: center; font-family: var(--font-mono);
+  padding: 8px 6px; background: var(--bg);
+  border-radius: var(--radius);
+}
+
 /* Winnings figure */
 .winnings-display {
-  text-align: center; font-family: var(--font-mono);
-  padding: 10px 8px; background: var(--bg);
-  border: 2px solid var(--green); border-radius: var(--radius);
+  border: 2px solid var(--green);
   box-shadow: var(--glow-green);
 }
 .winnings-label {
-  display: block; font-size: 0.65rem; letter-spacing: 3px;
+  display: block; font-size: 0.60rem; letter-spacing: 2px;
   color: var(--text-dim); margin-bottom: 2px;
 }
 .winnings-amount {
-  font-size: 1.6rem; font-weight: 900;
+  font-size: 1.2rem; font-weight: 900;
   color: var(--green); text-shadow: var(--glow-green);
   display: block;
 }
@@ -620,10 +640,58 @@ body {
   100% { transform: scale(1);   color: var(--green); }
 }
 
-/* ---------- Right Panel (leaderboard + stats + achievements) ------------ */
+/* Balance figure */
+.balance-display {
+  border: 2px solid var(--yellow-sat);
+}
+.balance-display.balance-low {
+  border-color: var(--red); box-shadow: var(--glow-red);
+}
+.balance-label {
+  display: block; font-size: 0.60rem; letter-spacing: 2px;
+  color: var(--text-dim); margin-bottom: 2px;
+}
+.balance-amount {
+  font-size: 1.2rem; font-weight: 900;
+  color: var(--yellow); display: block;
+}
+.balance-display.balance-low .balance-amount { color: var(--red); }
+.balance-amount.bump { animation: winsBump 0.4s ease-out; }
+
+/* Rank figure */
+.rank-display {
+  border: 2px solid var(--border);
+}
+.rank-label {
+  display: block; font-size: 0.60rem; letter-spacing: 2px;
+  color: var(--text-dim); margin-bottom: 2px;
+}
+.rank-amount {
+  font-size: 1rem; font-weight: 900;
+  color: var(--text-dim); display: block;
+}
+.rank-amount.ranked { color: var(--green); text-shadow: var(--glow-green); }
+
+/* ---------- Left Panel — achievements overflow management -------------- */
+.panel-left {
+  align-self: start;    /* don't stretch to grid row height */
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+}
+
+/* Achievements widget inside left panel — compact grid */
+.panel-left .achievements-widget {
+  flex-shrink: 0;
+}
+.panel-left .achievements-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ---------- Right Panel (leaderboard + stats) ------------------- */
 .panel-right {
   display: flex; flex-direction: column; gap: 12px;
   position: relative; z-index: 1;
+  align-self: start;
 }
 .widget-title {
   font-family: var(--font-mono); font-size: 0.72rem;
@@ -860,6 +928,44 @@ body {
   100% { transform: scale(1);   opacity: 1; }
 }
 
+/* ---------- Achievement Toasts ------------------------------------------ */
+.toast-container {
+  position: fixed; bottom: 20px; right: 20px;
+  z-index: 400;
+  display: flex; flex-direction: column-reverse; gap: 8px;
+  align-items: flex-end; pointer-events: none;
+}
+.toast {
+  background: var(--surface2);
+  border: 1px solid var(--yellow-sat);
+  color: var(--yellow);
+  font-family: var(--font-mono); font-size: 0.78rem;
+  padding: 10px 14px; border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6), var(--glow-yell);
+  display: flex; align-items: center; gap: 8px;
+  max-width: 280px; pointer-events: none;
+  animation: toastSlideIn 0.3s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+}
+.toast.toast-out {
+  animation: toastSlideOut 0.3s ease-in forwards;
+}
+.toast-icon {
+  font-size: 1rem; flex-shrink: 0;
+}
+@keyframes toastSlideIn {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+@keyframes toastSlideOut {
+  from { transform: translateX(0);   opacity: 1; }
+  to   { transform: translateX(110%); opacity: 0; }
+}
+body[data-reducedmotion="true"] .toast,
+body[data-reducedmotion="true"] .toast.toast-out {
+  animation: none !important;
+  transform: none !important;
+}
+
 /* ---------- Accessibility overrides ------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -896,10 +1002,10 @@ body[data-epilepsysafe="true"] .jackpot-amount {
 }
 @media (max-width: 780px) {
   .game-layout  { grid-template-columns: 1fr; padding: 72px 10px 10px; }
-  .panel-left   { flex-direction: row; align-items: flex-start; }
-  .robot-mascot { flex: 0 0 120px; }
-  .chat-mini    { flex: 1; }
+  .panel-left   { flex-direction: column; max-height: none; overflow-y: visible; }
   .machine-frame { max-width: 100%; }
+  .machine-stat-row { gap: 5px; }
+  .balance-amount, .winnings-amount, .rank-amount { font-size: 1rem; }
 }
 @media (max-width: 480px) {
   .logo-text  { font-size: 1rem; }

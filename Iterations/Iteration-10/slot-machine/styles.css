@@ -117,7 +117,7 @@ body {
   max-width: 1400px; margin: 0 auto;
   display: grid;
   grid-template-columns: 220px 1fr 240px;
-  gap: 16px; padding: 16px;
+  gap: 16px; padding: 72px 16px 16px;
   min-height: calc(100vh - 62px);
   position: relative;
 }
@@ -414,12 +414,16 @@ body {
   font-family: var(--font-mono); font-size: 0.85rem;
   color: var(--yellow); opacity: 0;
   transition: opacity 0.3s;
+  background: rgba(0,0,0,0.65);
+  border-radius: 20px; padding: 3px 16px;
 }
 .near-miss-bar.visible { opacity: 1; }
 .result-display {
   text-align: center; font-family: var(--font-mono);
   font-size: 1rem; min-height: 28px;
   color: var(--green); font-weight: 700;
+  background: rgba(0,0,0,0.65);
+  border-radius: 20px; padding: 4px 16px;
 }
 
 /* Coin burst */
@@ -853,7 +857,7 @@ body[data-epilepsysafe="true"] .jackpot-amount {
   .panel-right { display: none; }
 }
 @media (max-width: 780px) {
-  .game-layout  { grid-template-columns: 1fr; padding: 10px; }
+  .game-layout  { grid-template-columns: 1fr; padding: 72px 10px 10px; }
   .panel-left   { flex-direction: row; align-items: flex-start; }
   .robot-mascot { flex: 0 0 120px; }
   .chat-mini    { flex: 1; }
