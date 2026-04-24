@@ -1,4 +1,4 @@
-# Iteration 20 Plan: Feature Completion & Engine Validation
+# Iteration 19 Plan: Feature Completion & Engine Validation
 
 ### Goals
 * **Mathematical Truth**: Finalize the payout table reconciliation to hit the 92% Total RTP target (87% Base + 5% Jackpot contribution) using a 3-million-spin internal validation gate.
