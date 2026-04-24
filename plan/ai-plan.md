@@ -103,3 +103,9 @@ the project**, clearly separated and labeled, with clean structure and maintaina
   - This might be because it's hard for Claude to determine what "meaningful" change is, as it's an arbituary standard. On the other had, a more binary or specific intruction forces drastic changes. 
 - Being more specific about the code files we intend Claude to iterate rather than just saying iterate seems to be working, the drift from iteration 3 to 4 was extremely minimal in comparison to the previous warmup. 
 
+# Learnings From Iteration 7
+- The transition from a 3×3 to a 3×5 reel layout was successful without breaking existing game mechanics.
+- The new layout scales correctly across different screen sizes, maintaining the integrity of the responsive CSS.
+- The robot-themed visual styling remained intact throughout the update.
+- The project successfully maintains clean, modular code with proper JSDocs and type annotations for JavaScript functions.
+- Core secondary features like the chatbot and leaderboard data were successfully preserved during the refactor.
