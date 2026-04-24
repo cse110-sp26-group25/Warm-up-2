@@ -1,4 +1,4 @@
-# Iteration 14 Plan: Logic Hardening & Mobile Layout Optimization
+# Iteration 13 Plan: Logic Hardening & Mobile Layout Optimization
 
 ### Goals
 - **Security & Integrity**: Move balance-checking and deduction logic from the UI layer (`ui.js`) into the `GameLogic` module to prevent client-side exploits.
