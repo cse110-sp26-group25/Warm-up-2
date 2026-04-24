@@ -462,6 +462,14 @@
   <script src="uiReels.js"></script>
   <script src="uiMascot.js"></script>
   <script src="uiPanels.js"></script>
+  <!--
+    Iteration 17 — new modules (load order matters):
+      toastManager    → no dependencies; must load before ui.js
+      rtpCertification → depends on GameLogic (for CONFIG fingerprint);
+                         must load after gameLogic.js and before ui.js
+  -->
+  <script src="toastManager.js"></script>
+  <script src="rtpCertification.js"></script>
   <script src="ui.js"></script>
 </body>
 </html>

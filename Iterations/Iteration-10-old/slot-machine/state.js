@@ -1,23 +1,17 @@
 /**
- * state.js — Centralized, persistent application state (Iteration 16).
+ * state.js — Centralized, persistent application state (Iteration 09).
  *
  * Single source of truth for data that must survive a page refresh:
- *   • totalWinnings, spinCount, pityMeter, balance
+ *   • totalWinnings, spinCount, pityMeter
  *   • unlockedAchievements, playerStats
  *   • jackpot, player (name, color), settings, meta
  *
- * Iteration 16 — no schema change. The `isStorageAvailable()` API
- * continues to be consumed by `ui.js` for the header memory-error
- * badge, which now transitions to a stable `.static` state after 10 s
- * (UI change only; this module is unchanged). Header restamped for
- * iteration continuity.
- *
- * Prior-iteration highlights preserved here:
- *   • `_checkStorageAvailable()` — detects private/incognito mode at boot.
- *   • `_migrate(saved)` — versioned migration pathway. Each schema bump
+ * Iteration 09 additions:
+ *   • `_checkStorageAvailable()` — detects private/incognito mode at boot
+ *     and exposes `isStorageAvailable()` so the UI can warn the player.
+ *   • `_migrate(saved)` — versioned migration pathway. Every schema bump
  *     adds a new conditional block here; older saves upgrade cleanly.
- *   • `settings.fastPlay` (added Iteration 09).
- *   • `balance` field (added Iteration 13).
+ *   • `settings.fastPlay` added to the default schema (Fast Play toggle).
  *   • Writes are no-ops (silently swallowed) when storage is unavailable.
  */
 const State = (() => {
@@ -26,7 +20,7 @@ const State = (() => {
   const STORAGE_KEY = 'robo_slots_state_v1';
 
   /** @type {number} Current schema version. Bump when fields are added/removed. */
-  const SCHEMA_VERSION = 3;
+  const SCHEMA_VERSION = 2;
 
   /** @type {number} Debounce window for persistence writes (ms). */
   const SAVE_DEBOUNCE_MS = 400;
@@ -71,7 +65,6 @@ const State = (() => {
         name:  '',
         color: '#fff176',
       },
-      balance:       200,
       totalWinnings: 0,
       spinCount:     0,
       pityMeter:     0,
@@ -93,7 +86,6 @@ const State = (() => {
         reducedMotion: false,
         epilepsySafe:  false,
         fastPlay:      false,   // Iteration 09: Fast Play toggle
-        theme:         'robot', // Iteration 18: theme selection
       },
       jackpot: 1000,
     };
@@ -125,12 +117,6 @@ const State = (() => {
       if (!saved.settings) saved.settings = {};
       if (saved.settings.fastPlay === undefined) saved.settings.fastPlay = false;
       saved.version = 2;
-    }
-
-    // v2 → v3: added `balance` (starting credit system).
-    if (v < 3) {
-      if (saved.balance === undefined) saved.balance = 200;
-      saved.version = 3;
     }
 
     // Future migrations: add new `if (v < N)` blocks here.

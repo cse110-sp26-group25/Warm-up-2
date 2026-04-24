@@ -1,27 +1,37 @@
 /**
- * ui.js — UI orchestration layer (Iteration 16).
+ * ui.js — UI orchestration layer (Iteration 17).
  *
  * Top-level coordinator that wires together every sub-module (UiReels,
  * UiMascot, UiPanels) and drives the core spin cycle, win celebrations,
  * and boot sequence. Heavy lifting is split into:
  *
- *   • uiReels.js   — reel-strip construction and CSS-blur animation.
- *   • uiMascot.js  — robot mascot interactions, chat, idle quips.
- *   • uiPanels.js  — slide-over panels, settings, leaderboard, achievements.
+ *   • uiReels.js         — reel-strip construction and CSS-blur animation.
+ *   • uiMascot.js        — robot mascot interactions, chat, idle quips.
+ *   • uiPanels.js        — slide-over panels, settings, leaderboard, achievements.
+ *   • toastManager.js    — priority-queue toast system (Iteration 17).
+ *   • rtpCertification.js — build-time cert loader (Iteration 17).
  *
- * Iteration 16 — what changed in this file:
- *   • `_updateLuckIndicator()` refactored for the new dull-grey →
- *     glowing-neon-orange luck-node scheme. Within 2 spins of the pity
- *     threshold, active nodes gain a `.lk-pulse-fast` class that drives
- *     a non-linear anticipatory pulse (CSS-defined).
- *   • `_showStorageWarning()` now applies the CSS `.static` class after
- *     10 s instead of killing the animation cold — the transition is
- *     smoother and the badge can be fully styled via CSS.
+ * Iteration 17 — what changed in this file:
+ *   • `_showAchievementToast` replaced by `ToastManager.show()`. The old
+ *     FIFO-with-cap approach is gone; toasts are now queued by priority,
+ *     preemption handles jackpot cascades, and batching deduplicates rapid
+ *     achievement floods.
+ *   • Jackpot, big-win, and bonus win paths each post a typed toast at the
+ *     correct priority tier so they always surface above achievement toasts.
+ *   • `_updateHeaderHeight()` + resize/orientationchange listeners update
+ *     the `--header-height` CSS variable so `.toast-container` always clears
+ *     the real header, fixing the 780px–1100px tablet overlap bug.
+ *   • Boot sequence attempts to load `rtp_certification.json` via
+ *     `RtpCertification.load()` and skips the runtime simulation when a
+ *     valid cert is present. The optional background worker is also started
+ *     here if the feature flag is enabled.
+ *
+ * Iteration 16 retained:
+ *   • `_updateLuckIndicator()` — dull-grey → glowing-neon-orange scheme.
+ *   • `_showStorageWarning()` — CSS `.static` class after 10 s.
  *
  * Iteration 14 retained:
- *   • Balance guard lives inside `GameLogic.spin()`; this module branches
- *     on the returned rejection object and surfaces a denied-sound + quip.
- *   • Achievement toasts drop from the top-center over the machine frame.
+ *   • Balance guard inside `GameLogic.spin()`.
  *   • `#storage-warning` header badge for private/incognito mode.
  */
 (function () {
@@ -121,6 +131,61 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  HEADER HEIGHT — dynamic CSS variable (Iteration 17)
+  // ═══════════════════════════════════════════════════════════════════
+  /**
+   * Measure the real rendered header height and write it into the
+   * `--header-height` CSS variable on <html>.
+   *
+   * This single function is the source of truth for toast container
+   * positioning. Using getBoundingClientRect() is accurate regardless of
+   * whether the header has wrapped to multiple lines (e.g. on 780–1100px
+   * tablets in landscape where the nav buttons push the header taller).
+   *
+   * Layout thrashing avoidance: the read (getBoundingClientRect) is done
+   * once inside a requestAnimationFrame callback, which batches the
+   * measurement with the browser's natural paint cycle so no extra layout
+   * reflows are triggered.
+   * @returns {void}
+   */
+  const _siteHeader = document.querySelector('.site-header');
+  let   _headerRafId = null;
+
+  function _updateHeaderHeight() {
+    // Cancel any pending frame — only the latest measurement matters.
+    if (_headerRafId !== null) cancelAnimationFrame(_headerRafId);
+
+    _headerRafId = requestAnimationFrame(() => {
+      _headerRafId = null;
+      if (!_siteHeader) return;
+      const h = _siteHeader.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--header-height', h + 'px');
+    });
+  }
+
+  // Listen for layout-changing events that alter header height.
+  window.addEventListener('resize',            _updateHeaderHeight, { passive: true });
+  window.addEventListener('orientationchange', _updateHeaderHeight, { passive: true });
+
+  // Measure immediately so the CSS variable is correct before any toast
+  // could possibly appear (well before the 600ms boot greeting delay).
+  _updateHeaderHeight();
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  TOAST MANAGER INITIALISATION (Iteration 17)
+  // ═══════════════════════════════════════════════════════════════════
+  /**
+   * Wire the ToastManager to the DOM container and match its timing
+   * constants to the existing CFG values so slide-out animations still
+   * align with the CSS `toastDropOut` keyframe duration (300 ms).
+   */
+  ToastManager.init(toastContainer, {
+    visibleMs:     CFG.TOAST_VISIBLE_MS,
+    slideOutMs:    CFG.TOAST_SLIDE_OUT_MS,
+    batchWindowMs: 500,   // 500ms window collapses rapid achievement cascades
+  });
 
   // ── Boot: build reel strips ────────────────────────────────────────
   UiReels.buildAllStrips();
@@ -399,6 +464,7 @@
     _lightsCycle(CFG.SMALL_WIN_MS);
     _showWinCelebration(GameLogic.formatMoney(amount), 'WIN!', CFG.SMALL_WIN_MS);
     _spawnCoins(CFG.COINS_SMALL);
+    // No toast for small wins — the win-celebration overlay is sufficient.
   }
 
   /**
@@ -412,6 +478,16 @@
     _lightsCycle(CFG.BIG_WIN_MS);
     _showWinCelebration(GameLogic.formatMoney(amount), 'BIG WIN!', CFG.BIG_WIN_MS);
     _spawnCoins(CFG.COINS_BIG);
+
+    // Iteration 17: Priority-3 toast so big-win can preempt queued
+    // achievement notifications but never a jackpot notification.
+    ToastManager.show({
+      message:  'BIG WIN! ' + GameLogic.formatMoney(amount),
+      priority: ToastManager.PRIORITY.BIG_WIN,
+      key:      'bigwin',
+      icon:     '&#9733;&#9733;',
+      batchable: false,  // each big win is a distinct event
+    });
   }
 
   /**
@@ -427,6 +503,16 @@
     _spawnCoins(CFG.COINS_JACKPOT);
     UiMascot.setRobotMood('dance');
     setTimeout(() => UiMascot.setRobotMood('normal'), CFG.JACKPOT_WIN_MS);
+
+    // Iteration 17: Priority-4 (JACKPOT) toast — highest tier, never
+    // batched, always preempts everything else currently visible.
+    ToastManager.show({
+      message:  '\u2605 JACKPOT! ' + GameLogic.formatMoney(amount),
+      priority: ToastManager.PRIORITY.JACKPOT,
+      key:      null,      // null key = never batched
+      icon:     '&#9733;',
+      batchable: false,
+    });
   }
 
   /**
@@ -515,47 +601,14 @@
   }
 
   /**
-   * Show a brief top-center toast for a newly unlocked achievement.
-   * Toasts stack below one another via flex column layout.
-   * Enforces a cap of 3 simultaneous toasts — if the cap is reached the
-   * oldest live toast is dismissed immediately before the new one is added,
-   * so the stack never grows tall enough to overlap the jackpot or reels.
-   * Respects the `data-reducedmotion` setting (CSS handles it).
-   * @param {{label:string, desc:string}} def - Achievement definition.
-   * @returns {void}
-   */
-  function _showAchievementToast(def) {
-    if (!toastContainer) return;
-
-    // Enforce a 3-toast cap: dismiss the oldest live toast before adding a new one.
-    const live = toastContainer.querySelectorAll('.toast:not(.toast-out)');
-    if (live.length >= 3) {
-      const oldest = live[0];
-      oldest.classList.add('toast-out');
-      setTimeout(() => {
-        if (oldest.parentNode) oldest.parentNode.removeChild(oldest);
-      }, CFG.TOAST_SLIDE_OUT_MS);
-    }
-
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.setAttribute('role', 'status');
-    toast.innerHTML =
-      `<span class="toast-icon" aria-hidden="true">&#9733;</span>` +
-      `<span class="toast-body">UNLOCKED: ${_esc(def.label)}</span>`;
-    toastContainer.appendChild(toast);
-
-    // After the visible duration, animate out and remove.
-    setTimeout(() => {
-      toast.classList.add('toast-out');
-      setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-      }, CFG.TOAST_SLIDE_OUT_MS);
-    }, CFG.TOAST_VISIBLE_MS);
-  }
-
-  /**
    * Announce a newly unlocked achievement via bubble, chat, and toast.
+   *
+   * Iteration 17: `_showAchievementToast` is removed. All toast creation
+   * now goes through `ToastManager.show()` with PRIORITY.ACHIEVEMENT (1).
+   * Rapid cascades (e.g. "first spin" + "10 spins" both firing on spin 10)
+   * are automatically coalesced by the 500ms batch window into a single
+   * "2× UNLOCKED: ..." toast, preventing notification floods.
+   *
    * @param {{label:string, desc:string}} def - Achievement definition.
    * @returns {void}
    */
@@ -563,7 +616,18 @@
     Audio.playAchievement();
     UiMascot.showRobotBubble('ACHIEVEMENT UNLOCKED: ' + def.label + '!');
     UiMascot.addChatMessage('ROBO', 'Achievement unlocked: ' + def.label + '! ' + def.desc, true);
-    _showAchievementToast(def);
+
+    // Route through the priority toast manager.
+    // key='achievement' enables batching: multiple rapid achievement unlocks
+    // within the 500ms window will be shown as a single grouped toast.
+    ToastManager.show({
+      message:  'UNLOCKED: ' + def.label,
+      priority: ToastManager.PRIORITY.ACHIEVEMENT,
+      key:      'achievement',
+      icon:     '&#9733;',
+      batchable: true,
+    });
+
     UiPanels.updateAchievements();
   }
 
@@ -688,26 +752,62 @@
     }, CFG.STORAGE_WARN_PULSE_MS);
   }
 
-  setTimeout(() => {
-    const storageOk = State.isStorageAvailable();
+  // ── Async boot sequence ───────────────────────────────────────────────
+  // Iteration 17: the boot sequence is now async so we can await the cert
+  // load before deciding whether to start the background worker. The actual
+  // UI greeting still fires after CFG.BOOT_DELAY_MS — the cert load runs in
+  // parallel so it doesn't add any perceptible delay.
+  (async function _boot() {
+    // ── 1. Load RTP certification (non-blocking) ────────────────────
+    // The cert load happens immediately (not after BOOT_DELAY_MS) so it
+    // has time to complete before the player might trigger a spin.
+    const certLoaded = await RtpCertification.load();
 
-    // Pick the right greeting: normal path via Chat, or memory-error override.
-    const greeting = storageOk
-      ? Chat.getBootGreeting()
-      : MEMORY_ERROR_GREETING;
-
-    UiMascot.addChatMessage('ROBO', greeting, true);
-    UiMascot.showRobotBubble(
-      greeting.length > 60 ? greeting.slice(0, 57) + '...' : greeting
-    );
-
-    if (!storageOk) _showStorageWarning();
-
-    // Welcome sting for returning players only (and only if storage works —
-    // otherwise "returning" has no meaning).
-    if (storageOk && State.isReturningPlayer()) {
-      try { Audio.unlock(); Audio.playWelcome(); } catch (_e) { /* suspended context */ }
+    if (certLoaded) {
+      // The pre-generated certification is valid — no runtime simulation
+      // needed. The background worker below is optional and off by default.
+      console.info('[boot] RTP cert valid — runtime simulation skipped.');
+    } else {
+      // Cert missing or stale (e.g. first run, or payouts changed without
+      // re-running the build script). Log a warning but do not block
+      // gameplay — the game is fully playable without a cert.
+      console.warn(
+        '[boot] rtp_certification.json not loaded. ' +
+        'Run `node scripts/verifyRtp.js` to generate it.'
+      );
     }
-  }, CFG.BOOT_DELAY_MS);
+
+    // ── 2. Optional background RTP worker ──────────────────────────
+    // Starts only if window.__RTP_BACKGROUND_VERIFY === true or
+    // localStorage.rtp_bg_verify === '1'. Off by default.
+    // Runs entirely on a separate thread; zero impact on gameplay.
+    RtpCertification.startBackgroundWorker(GameLogic.CONFIG, {
+      totalSpins: 3_000_000,
+      batchSize:  300_000,
+    });
+
+    // ── 3. Delayed UI greeting (original BOOT_DELAY_MS timing) ─────
+    setTimeout(() => {
+      const storageOk = State.isStorageAvailable();
+
+      // Pick the right greeting: normal path via Chat, or memory-error override.
+      const greeting = storageOk
+        ? Chat.getBootGreeting()
+        : MEMORY_ERROR_GREETING;
+
+      UiMascot.addChatMessage('ROBO', greeting, true);
+      UiMascot.showRobotBubble(
+        greeting.length > 60 ? greeting.slice(0, 57) + '...' : greeting
+      );
+
+      if (!storageOk) _showStorageWarning();
+
+      // Welcome sting for returning players only (and only if storage works —
+      // otherwise "returning" has no meaning).
+      if (storageOk && State.isReturningPlayer()) {
+        try { Audio.unlock(); Audio.playWelcome(); } catch (_e) { /* suspended context */ }
+      }
+    }, CFG.BOOT_DELAY_MS);
+  })();
 
 })();

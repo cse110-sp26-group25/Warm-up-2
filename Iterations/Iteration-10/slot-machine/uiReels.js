@@ -208,13 +208,15 @@ const UiReels = (() => {
         const total   = reel.length;
         const symH    = CFG.SYMBOL_HEIGHT;
 
-        // Start from a random position in the 2nd repetition.
-        const startPos  = (total + RNG.randInt(0, total - 1) - 1) * symH;
         // Target: winning symbol centred (row 1) in the 2nd repetition.
         const targetPos = (total + targetStop - 1) * symH;
         // The high-speed phase adds HIGH_SPEED_WRAPS full rotations so
         // the reel looks like it's genuinely flying.
         const finalPos  = targetPos + CFG.HIGH_SPEED_WRAPS * symH;
+        // Pick a random start in the 2nd repetition, then clamp it below
+        // finalPos so the strip always travels forward (downward scroll).
+        const rawStart  = (total + RNG.randInt(0, total - 1) - 1) * symH;
+        const startPos  = Math.min(rawStart, finalPos - symH);
         const overshoot = symH * CFG.OVERSHOOT_FRACTION;
 
         // Snap to start position without animating.

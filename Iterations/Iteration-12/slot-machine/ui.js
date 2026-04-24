@@ -59,6 +59,9 @@
   const spinBtn        = $('spin-btn');
   const jackpotAmount  = $('jackpot-amount');
   const winningsAmount = $('winnings-amount');
+  const balanceAmount  = $('balance-amount');
+  const balanceDisplay = $('balance-display');
+  const rankDisplay    = $('rank-display');
   const resultDisplay  = $('result-display');
   const nearMissBar    = $('near-miss-bar');
   const winFlash       = $('win-flash');
@@ -66,12 +69,19 @@
   const winCelebration = $('win-celebration');
   const winAmountDisp  = $('win-amount-display');
   const winLabelDisp   = $('win-label-display');
+  const toastContainer = $('toast-container');
 
   // ── Spin-local state ───────────────────────────────────────────────
   /** @type {boolean} True while a spin is in progress. */
   let _spinning = false;
   /** @type {number} Currently selected bet amount. */
   let _currentBet = 1;
+
+  // ── Toast constants ────────────────────────────────────────────────
+  /** @type {number} ms a toast stays visible before sliding out. */
+  const TOAST_VISIBLE_MS  = 3000;
+  /** @type {number} ms for the slide-out animation (matches CSS). */
+  const TOAST_SLIDE_OUT_MS = 300;
 
   // ── Utility ────────────────────────────────────────────────────────
   /**
@@ -88,6 +98,43 @@
   // ── Boot: build reel strips ────────────────────────────────────────
   UiReels.buildAllStrips();
 
+  // ── Balance helpers ────────────────────────────────────────────────
+  /**
+   * Read the current persisted balance.
+   * @returns {number}
+   */
+  function _getBalance() {
+    return Number(State.get('balance')) || 0;
+  }
+
+  /**
+   * Refresh the balance display and spin-button lock state.
+   * @returns {void}
+   */
+  function _updateBalance() {
+    const bal = _getBalance();
+    if (balanceAmount) balanceAmount.textContent = GameLogic.formatMoney(bal);
+    const low = bal < _currentBet;
+    if (balanceDisplay) balanceDisplay.classList.toggle('balance-low', low);
+    if (!_spinning) spinBtn.disabled = low;
+  }
+
+  /**
+   * Refresh the player rank indicator.
+   * @returns {void}
+   */
+  function _updateRank() {
+    if (!rankDisplay) return;
+    const rank = Leaderboard.getPlayerRank();
+    if (rank === null) {
+      rankDisplay.textContent = 'UNRANKED';
+      rankDisplay.classList.remove('ranked');
+    } else {
+      rankDisplay.textContent = 'RANK #' + rank;
+      rankDisplay.classList.add('ranked');
+    }
+  }
+
   // ── Bet selector ───────────────────────────────────────────────────
   $$('.bet-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -101,6 +148,7 @@
       _currentBet = Number(btn.dataset.bet);
       Audio.playClick();
       UiMascot.resetIdle();
+      _updateBalance(); // re-check lock state for new bet amount
     });
   });
 
@@ -115,6 +163,15 @@
   async function _doSpin() {
     if (_spinning) return;
 
+    // Balance guard — must have enough credit for the selected bet.
+    const balBefore = _getBalance();
+    if (balBefore < _currentBet) {
+      resultDisplay.textContent = 'Insufficient balance!';
+      UiMascot.showRobotBubble('You are broke, unit. Lower your bet!');
+      _updateBalance();
+      return;
+    }
+
     Audio.unlock();
 
     const check = Security.checkSpin();
@@ -122,6 +179,9 @@
       UiMascot.showRobotBubble(_lockoutMessage(check.reason));
       return;
     }
+
+    // Deduct bet immediately before the spin.
+    State.set('balance', balBefore - _currentBet);
 
     _spinning = true;
     UiReels.setSpinning(true);
@@ -162,6 +222,11 @@
     $$('.lights-bar').forEach(lb => lb.classList.remove('active'));
     spinBtn.classList.remove('is-spinning');
 
+    // Credit any payout back to the balance.
+    if (result.payout > 0) {
+      State.set('balance', _getBalance() + result.payout);
+    }
+
     if (result.payout > 0 || result.type === 'jackpot') {
       _handleWin(result);
     } else if (result.nearMiss) {
@@ -181,13 +246,16 @@
 
     _updateJackpot();
     _updatePityBar();
+    _updateBalance();
+    _updateRank();
     UiPanels.updateStats();
     UiPanels.updateAchievements();
     UiPanels.refreshLeaderboard();
 
     _spinning = false;
     UiReels.setSpinning(false);
-    spinBtn.disabled = false;
+    // Re-evaluate disabled state (balance might now be too low for current bet).
+    _updateBalance();
     UiMascot.resetIdle();
   }
 
@@ -402,7 +470,31 @@
   }
 
   /**
-   * Announce a newly unlocked achievement via bubble + chat.
+   * Show a brief bottom-right toast for a newly unlocked achievement.
+   * Respects the data-reducedmotion setting (CSS handles it).
+   * @param {{label:string, desc:string}} def - Achievement definition.
+   * @returns {void}
+   */
+  function _showAchievementToast(def) {
+    if (!toastContainer) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML =
+      `<span class="toast-icon">&#9733;</span>` +
+      `<span>UNLOCKED: ${_esc(def.label)}</span>`;
+    toastContainer.appendChild(toast);
+
+    // After the visible duration, animate out and remove.
+    setTimeout(() => {
+      toast.classList.add('toast-out');
+      setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, TOAST_SLIDE_OUT_MS);
+    }, TOAST_VISIBLE_MS);
+  }
+
+  /**
+   * Announce a newly unlocked achievement via bubble, chat, and toast.
    * @param {{label:string, desc:string}} def - Achievement definition.
    * @returns {void}
    */
@@ -410,6 +502,7 @@
     Audio.playAchievement();
     UiMascot.showRobotBubble('ACHIEVEMENT UNLOCKED: ' + def.label + '!');
     UiMascot.addChatMessage('ROBO', 'Achievement unlocked: ' + def.label + '! ' + def.desc, true);
+    _showAchievementToast(def);
     UiPanels.updateAchievements();
   }
 
@@ -448,6 +541,13 @@
   if (winningsAmount) {
     winningsAmount.textContent = GameLogic.formatMoney(GameLogic.totalWinnings);
   }
+
+  // Hydrate balance and rank on boot.
+  _updateBalance();
+  _updateRank();
+
+  // Re-render rank whenever leaderboard changes (bot ticks, etc.).
+  Leaderboard.onChange(_updateRank);
 
   // Initial stats + achievements render.
   UiPanels.updateStats();

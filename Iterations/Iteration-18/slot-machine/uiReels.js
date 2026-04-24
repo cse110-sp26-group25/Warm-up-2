@@ -131,6 +131,80 @@ const UiReels = (() => {
     </svg>`,
   });
 
+  // ── Lizard Hopper symbol SVGs (Iteration 18) ──────────────────────
+  /**
+   * Alternative SVG set for the Lizard Hopper theme.
+   * Keys match GameLogic symbol IDs exactly so the swap is transparent.
+   */
+  const SYMBOL_SVG_LIZARD_HOPPER = Object.freeze({
+    jackpot: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="40" r="36" fill="#ff8f00" stroke="#e65100" stroke-width="3"/>
+      <ellipse cx="40" cy="43" rx="17" ry="13" fill="#ffca28"/>
+      <circle cx="31" cy="34" r="5.5" fill="#1b5e20"/><circle cx="49" cy="34" r="5.5" fill="#1b5e20"/>
+      <circle cx="31" cy="33" r="2.5" fill="#fff"/><circle cx="49" cy="33" r="2.5" fill="#fff"/>
+      <path d="M 33 49 Q 40 54 47 49" fill="none" stroke="#e65100" stroke-width="2" stroke-linecap="round"/>
+      <text x="40" y="70" text-anchor="middle" font-family="monospace" font-size="9" font-weight="900" fill="#1b5e20">JACKPOT</text>
+    </svg>`,
+    seven: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="50" rx="27" ry="20" fill="#2e7d32" stroke="#66bb6a" stroke-width="2"/>
+      <circle cx="27" cy="38" r="8" fill="#1b5e20"/><circle cx="53" cy="38" r="8" fill="#1b5e20"/>
+      <circle cx="27" cy="37" r="4" fill="#c5e1a5"/><circle cx="53" cy="37" r="4" fill="#c5e1a5"/>
+      <circle cx="28" cy="36" r="1.5" fill="#111"/><circle cx="54" cy="36" r="1.5" fill="#111"/>
+      <path d="M 20 63 L 8 73 M 60 63 L 72 73" stroke="#2e7d32" stroke-width="3" stroke-linecap="round"/>
+      <text x="40" y="60" text-anchor="middle" font-family="monospace" font-size="24" font-weight="900" fill="#ffca28">7</text>
+    </svg>`,
+    gear: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="40" r="32" fill="#795548" stroke="#a1887f" stroke-width="2"/>
+      <path d="M 40 14 Q 56 16 64 29 Q 72 42 65 56 Q 58 70 43 73 Q 28 76 18 65 Q 8 54 10 40 Q 12 24 25 17 Q 32 13 40 14"
+            fill="none" stroke="#efebe9" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M 40 22 Q 52 24 58 34 Q 64 44 58 54 Q 52 64 42 66 Q 30 68 23 60 Q 16 52 18 42 Q 20 30 30 25"
+            fill="none" stroke="#d7ccc8" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="40" cy="40" r="9" fill="#4e342e"/>
+      <circle cx="40" cy="40" r="5" fill="#3e2723" stroke="#6d4c41" stroke-width="1.5"/>
+    </svg>`,
+    bolt: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="16" rx="10" ry="7" fill="#558b2f" stroke="#8bc34a" stroke-width="1.5"/>
+      <rect x="37" y="23" width="6" height="28" rx="3" fill="#c5e1a5"/>
+      <path d="M 40 51 L 26 70" stroke="#c5e1a5" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M 40 51 L 54 70" stroke="#c5e1a5" stroke-width="4.5" stroke-linecap="round"/>
+    </svg>`,
+    chip: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="46" rx="30" ry="19" fill="#2e7d32" stroke="#43a047" stroke-width="2"/>
+      <ellipse cx="40" cy="44" rx="26" ry="15" fill="#1b5e20"/>
+      <path d="M 40 44 L 40 12" stroke="#2e7d32" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="40" cy="44" r="20" fill="none" stroke="#43a047" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <circle cx="40" cy="44" r="12" fill="none" stroke="#43a047" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <circle cx="45" cy="36" r="5" fill="#a5d6a7"/>
+    </svg>`,
+    robo: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="50" rx="21" ry="14" fill="#558b2f" stroke="#8bc34a" stroke-width="2"/>
+      <ellipse cx="40" cy="34" rx="15" ry="12" fill="#558b2f" stroke="#8bc34a" stroke-width="2"/>
+      <circle cx="33" cy="29" r="5" fill="#1b5e20"/><circle cx="47" cy="29" r="5" fill="#1b5e20"/>
+      <circle cx="33" cy="28" r="2.5" fill="#c5e1a5"/><circle cx="47" cy="28" r="2.5" fill="#c5e1a5"/>
+      <path d="M 19 52 Q 7 48 4 57" stroke="#558b2f" stroke-width="3" stroke-linecap="round"/>
+      <path d="M 61 52 Q 73 48 76 57" stroke="#558b2f" stroke-width="3" stroke-linecap="round"/>
+      <path d="M 30 64 L 20 76 M 50 64 L 60 76" stroke="#558b2f" stroke-width="3" stroke-linecap="round"/>
+      <path d="M 40 64 L 40 78" stroke="#558b2f" stroke-width="3" stroke-linecap="round"/>
+    </svg>`,
+    nut: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="38" cy="46" rx="27" ry="21" fill="#78909c" stroke="#90a4ae" stroke-width="2"/>
+      <ellipse cx="38" cy="44" rx="23" ry="17" fill="#607d8b"/>
+      <ellipse cx="31" cy="40" rx="9" ry="7" fill="#546e7a"/>
+      <ellipse cx="47" cy="46" rx="11" ry="8" fill="#546e7a"/>
+      <ellipse cx="37" cy="52" rx="8" ry="6" fill="#546e7a"/>
+      <path d="M 13 45 Q 17 28 36 23" stroke="#90a4ae" stroke-width="2" stroke-linecap="round" fill="none"/>
+    </svg>`,
+    screw: `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <rect x="37" y="30" width="6" height="36" rx="3" fill="#33691e"/>
+      <circle cx="40" cy="24" r="8" fill="#33691e" stroke="#66bb6a" stroke-width="1.5"/>
+      <circle cx="37" cy="20" r="3" fill="#c5e1a5"/><circle cx="43" cy="20" r="3" fill="#c5e1a5"/>
+      <ellipse cx="22" cy="37" rx="19" ry="8" fill="rgba(197,225,165,0.35)" stroke="#8bc34a" stroke-width="1.5" transform="rotate(-18 22 37)"/>
+      <ellipse cx="58" cy="37" rx="19" ry="8" fill="rgba(197,225,165,0.35)" stroke="#8bc34a" stroke-width="1.5" transform="rotate(18 58 37)"/>
+      <ellipse cx="20" cy="50" rx="15" ry="6" fill="rgba(197,225,165,0.25)" stroke="#8bc34a" stroke-width="1" transform="rotate(-12 20 50)"/>
+      <ellipse cx="60" cy="50" rx="15" ry="6" fill="rgba(197,225,165,0.25)" stroke="#8bc34a" stroke-width="1" transform="rotate(12 60 50)"/>
+    </svg>`,
+  });
+
   // ── Private module state ───────────────────────────────────────────
   /** @type {boolean} Guards against animation calls while a spin is live. */
   let _spinning = false;
@@ -144,7 +218,9 @@ const UiReels = (() => {
   function _makeSymbolDiv(symbolId) {
     const div = document.createElement('div');
     div.className = 'reel-symbol';
-    div.innerHTML = SYMBOL_SVG[symbolId] || SYMBOL_SVG.screw;
+    const isLizard = document.body.classList.contains('theme-lizard-hopper');
+    const map = isLizard ? SYMBOL_SVG_LIZARD_HOPPER : SYMBOL_SVG;
+    div.innerHTML = map[symbolId] || SYMBOL_SVG[symbolId] || SYMBOL_SVG.screw;
     return div;
   }
 
@@ -166,6 +242,9 @@ const UiReels = (() => {
 
     /** Expose SYMBOL_SVG for any module that needs to render a symbol inline. */
     SYMBOL_SVG,
+
+    /** Expose Lizard Hopper symbol SVGs for payout-table rendering. */
+    SYMBOL_SVG_LIZARD_HOPPER,
 
     /**
      * Build the DOM symbol-strip for one reel column.

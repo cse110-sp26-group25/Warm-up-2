@@ -1,28 +1,20 @@
 /**
- * gameLogic.js — Payout math, reel configuration, spin resolution (Iteration 14).
+ * gameLogic.js — Payout math, reel configuration, spin resolution (Iteration 09).
  *
  * All tunable numbers live in the module-level `CONFIG` object — no magic
- * numbers elsewhere in this file. Persistent values (jackpot, pityMeter,
- * totalWinnings, balance) are read from and written back to the `State`
+ * numbers elsewhere in this file. Persistent values (jackpot, spinCount,
+ * pityMeter, totalWinnings) are read from and written back to the `State`
  * module so they survive page reloads.
  *
- * Iteration 14 — Secure Spin Guard:
- *   The "insufficient balance" check previously lived in `ui.js`. A developer
- *   could open the console and call `GameLogic.spin(1000)` directly to
- *   bypass the UI-layer check and win prizes without paying for bets. The
- *   check now lives inside `spin()` itself and returns a typed rejection
- *   object — no path into the payout math exists without passing this gate.
+ * Iteration 09 bug fix — Pity double-counting:
+ *   In Iteration 08, if pity triggered but reel 0 landed on the `jackpot`
+ *   symbol (which has no TWO-multiplier entry), `_resolve` returned payout=0.
+ *   The loss branch then incremented `_pityMeter` again, so pity fired on
+ *   the very next spin too — double-counting `playerStats.pityTriggers`.
  *
- *   The bet deduction also moves into `spin()` so that balance mutation and
- *   spin resolution are a single atomic transaction from the caller's view.
- *   Payout credit remains centralised here too, so one function owns the
- *   full balance lifecycle of a spin.
- *
- * Iteration 09 carry-over — Pity double-counting:
- *   When pity triggers but the forced symbol has no TWO-multiplier (e.g.
- *   jackpot×jackpot), `_resolve` returns payout=0. `_pityMeter` is reset on
- *   every pity trigger regardless of payout so the mechanic fires exactly
- *   once per threshold crossing.
+ *   Fix: `_pityMeter` is reset to 0 whenever `pityTriggered === true`,
+ *   regardless of whether the resulting spin produced a non-zero payout.
+ *   This ensures the pity mechanic fires exactly once per threshold crossing.
  */
 const GameLogic = (() => {
 
@@ -57,17 +49,6 @@ const GameLogic = (() => {
     },
   });
 
-  /**
-   * Rejection reason codes returned by `spin()`.
-   * Consumers should branch on these rather than string-matching.
-   * @readonly
-   * @enum {string}
-   */
-  const REJECT = Object.freeze({
-    INSUFFICIENT_BALANCE: 'insufficient_balance',
-    INVALID_BET:          'invalid_bet',
-  });
-
   // ── Symbol definitions ─────────────────────────────────────────────
   /** @type {ReadonlyArray<{id:string,label:string,weight:number}>} */
   const SYMBOLS = Object.freeze([
@@ -98,37 +79,13 @@ const GameLogic = (() => {
 
   // ── Persistent state mirrors ───────────────────────────────────────
   /** @type {number} */
+  let _spinCount     = /** @type {number} */ (State.get('spinCount'))     || 0;
+  /** @type {number} */
   let _totalWinnings = /** @type {number} */ (State.get('totalWinnings')) || 0;
   /** @type {number} */
   let _jackpot       = /** @type {number} */ (State.get('jackpot'))       || CONFIG.JACKPOT_SEED;
   /** @type {number} */
   let _pityMeter     = /** @type {number} */ (State.get('pityMeter'))     || 0;
-
-  // ── Private helpers ────────────────────────────────────────────────
-
-  /**
-   * Read the authoritative balance from the State module.
-   * @returns {number} Current balance in dollars.
-   */
-  function _getBalance() {
-    return Number(State.get('balance')) || 0;
-  }
-
-  /**
-   * Validate that a bet amount is permitted given the current balance.
-   * @param {number} bet - Proposed bet.
-   * @returns {{ok: true}|{ok: false, reason: string, balance: number, bet: number}}
-   */
-  function _validateBet(bet) {
-    if (!Number.isFinite(bet) || bet <= 0) {
-      return { ok: false, reason: REJECT.INVALID_BET, balance: _getBalance(), bet };
-    }
-    const bal = _getBalance();
-    if (bal < bet) {
-      return { ok: false, reason: REJECT.INSUFFICIENT_BALANCE, balance: bal, bet };
-    }
-    return { ok: true };
-  }
 
   // ── Public API ─────────────────────────────────────────────────────
   return {
@@ -136,91 +93,40 @@ const GameLogic = (() => {
     REELS,
     REEL_SIZE:  CONFIG.REEL_SIZE,
     REEL_COUNT: CONFIG.REEL_COUNT,
-    PAYOUTS:    CONFIG.PAYOUTS,
     CONFIG,
-    REJECT,
 
     /** @returns {number} Current jackpot value. */
     get jackpot()       { return _jackpot; },
     /** @returns {number} Cumulative lifetime winnings. */
     get totalWinnings() { return _totalWinnings; },
-    /** @returns {number} Total spins across all sessions (read from playerStats). */
-    get spinCount()     { return State.get('playerStats.spins') || 0; },
+    /** @returns {number} Total spins across all sessions. */
+    get spinCount()     { return _spinCount; },
     /** @returns {number} Current pity meter value. */
     get pityMeter()     { return _pityMeter; },
-    /** @returns {number} Current balance (convenience read-through). */
-    get balance()       { return _getBalance(); },
 
     /**
-     * Pre-flight check: can a spin at this bet be placed right now?
-     * @description Callers should use this for UI gating (disabling the
-     *   spin button, showing a low-balance hint). The authoritative check
-     *   still runs inside `spin()` itself — this is an optimisation, not a
-     *   security boundary.
-     * @param {number} bet - Proposed bet amount.
-     * @returns {boolean} True if `spin(bet)` would be accepted.
-     */
-    canSpin(bet) {
-      return _validateBet(bet).ok;
-    },
-
-    /**
-     * Spin all reels, deduct the bet, credit any payout, and resolve the
-     * centre-row payline — as a single transaction.
+     * Spin all reels and resolve the centre-row payline.
      * @description
-     *   1. Validates the bet against current balance. If invalid, returns a
-     *      typed rejection object (no state mutation) and the caller must
-     *      handle it (`ui.js` plays a "denied" sound + ROBO quip).
-     *   2. Deducts the bet from the persistent balance.
-     *   3. Grows the jackpot by `JACKPOT_FRACTION × bet`.
-     *   4. If pity threshold reached, nudges reel 1 to match reel 0 and
-     *      increments `pityTriggers`.
-     *   5. Resolves the payline, awards the jackpot pool on any jackpot hit,
-     *      and credits payout back to balance.
-     *   6. Persists all mutations to `State`.
-     *
-     *   Because the balance guard is *inside* this function, there is no
-     *   code path into the payout math that bypasses the check — not even
-     *   from the browser console.
-     *
+     *   1. Increments `spinCount` and grows the jackpot by a fraction of bet.
+     *   2. If `_pityMeter >= PITY_THRESHOLD`, applies the pity nudge (forces
+     *      reel 1 to match reel 0) and resets `_pityMeter` to 0 — regardless
+     *      of whether the resulting spin pays out. This prevents double-counting
+     *      when the forced symbol has no TWO-multiplier (e.g. jackpot × jackpot).
+     *   3. Resolves the payline and updates all persistent counters.
      * @param {number} bet - Bet amount in dollars.
-     * @returns {({
-     *   rejected: true,
-     *   reason: string,
-     *   balance: number,
-     *   bet: number
-     * }|{
-     *   rejected?: false,
+     * @returns {{
      *   stops: number[],
      *   symbols: string[],
      *   payout: number,
      *   type: string,
      *   nearMiss: boolean,
      *   pityTriggered: boolean,
-     *   betDeducted: number,
-     *   newBalance: number,
      *   jackpotAmount?: number
-     * })} Rejection object, or full spin result including bet/balance deltas.
+     * }} Spin result.
      */
     spin(bet) {
-      // ── SECURITY GATE ─────────────────────────────────────────────
-      // This guard now lives in the business-logic layer. A developer
-      // typing `GameLogic.spin(1000)` in the console when balance < 1000
-      // gets a rejection object and zero state mutation.
-      const check = _validateBet(bet);
-      if (!check.ok) {
-        return {
-          rejected: true,
-          reason:   check.reason,
-          balance:  check.balance,
-          bet:      check.bet,
-        };
-      }
-
-      // ── Atomic transaction begins ────────────────────────────────
-      const balBefore = _getBalance();
-      const newBalanceAfterDeduct = balBefore - bet;
-      State.set('balance', newBalanceAfterDeduct);
+      _spinCount += 1;
+      State.set('spinCount', _spinCount);
 
       // Grow the jackpot pool.
       _jackpot += bet * CONFIG.JACKPOT_FRACTION;
@@ -232,49 +138,41 @@ const GameLogic = (() => {
       if (_pityMeter >= CONFIG.PITY_THRESHOLD) {
         stops         = this._applyPity(stops);
         pityTriggered = true;
+        // Increment the persistent pity counter exactly once.
         State.increment('playerStats.pityTriggers', 1);
-        // Reset pityMeter immediately so the mechanic cannot fire again
-        // on the next spin even if this one ended up paying 0.
+        // BUG FIX (Iteration 09): reset pityMeter immediately so the mechanic
+        // cannot fire again on the very next spin if this spin's payout is 0
+        // (which can happen when the forced symbol has no TWO-multiplier, e.g.
+        // jackpot+jackpot). In Iteration 08 the reset only happened on a
+        // non-zero payout, causing pityTriggers to increment twice.
         _pityMeter = 0;
       }
 
       const syms   = stops.map((stop, i) => REELS[i][stop]);
       const result = this._resolve(syms, bet);
 
-      // Jackpot pool is awarded and reset BEFORE the payout > 0 check so
-      // that jackpot outcomes (which return payout:0 from _resolve) pay
-      // out correctly.
-      if (result.type === 'jackpot') {
-        const jpWin          = Math.floor(_jackpot);
-        result.payout       += jpWin;
-        result.jackpotAmount = jpWin;
-        _jackpot             = CONFIG.JACKPOT_SEED;
-      }
-
-      // Credit payout; grow pity meter on a genuine (non-pity-reset) loss.
+      // Book-keeping (pityMeter was already reset above if pity fired).
       if (result.payout > 0) {
         _totalWinnings += result.payout;
+
+        if (result.type === 'jackpot') {
+          const jpWin          = Math.floor(_jackpot);
+          _totalWinnings      += jpWin;
+          result.payout       += jpWin;
+          result.jackpotAmount = jpWin;
+          _jackpot             = CONFIG.JACKPOT_SEED;
+        }
       } else if (!pityTriggered) {
+        // Only grow pityMeter on a genuine loss (not after a pity reset).
         _pityMeter += 1;
       }
 
-      // Credit payout back to balance inside the transaction.
-      const newBalanceAfterPayout = newBalanceAfterDeduct + (result.payout || 0);
-      if (result.payout > 0) State.set('balance', newBalanceAfterPayout);
-
-      // Persist remaining mutations.
+      // Persist.
       State.set('jackpot',       _jackpot);
       State.set('pityMeter',     _pityMeter);
       State.set('totalWinnings', _totalWinnings);
 
-      return {
-        stops,
-        symbols: syms,
-        pityTriggered,
-        betDeducted: bet,
-        newBalance:  newBalanceAfterPayout,
-        ...result,
-      };
+      return { stops, symbols: syms, pityTriggered, ...result };
     },
 
     /**
@@ -301,7 +199,6 @@ const GameLogic = (() => {
         return { payout: +(bet * mult).toFixed(2), type: 'five', nearMiss: false };
       }
       if (matchCount === 4) {
-        if (anchor === 'jackpot') return { payout: 0, type: 'jackpot', nearMiss: false };
         const mult = CONFIG.PAYOUTS.FOUR[anchor] || 0;
         if (mult) return { payout: +(bet * mult).toFixed(2), type: 'four', nearMiss: false };
       }

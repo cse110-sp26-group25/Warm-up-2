@@ -161,17 +161,63 @@ body {
 .bg-particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
 .particle {
   position: absolute; border-radius: 50%;
-  opacity: 0.08; animation: floatParticle linear infinite;
+  opacity: 0.07; animation: floatParticle linear infinite;
 }
+
+/* Original six circles */
 .p1 { width: 80px;  height: 80px;  background: var(--red);        left: 5%;  top: 20%; animation-duration: 22s; animation-delay:  -4s; }
 .p2 { width: 50px;  height: 50px;  background: var(--green);      left: 20%; top: 60%; animation-duration: 18s; animation-delay:  -9s; }
 .p3 { width: 120px; height: 120px; background: var(--yellow);     left: 75%; top: 10%; animation-duration: 30s; animation-delay:  -2s; }
 .p4 { width: 60px;  height: 60px;  background: var(--red);        left: 85%; top: 70%; animation-duration: 25s; animation-delay: -12s; }
 .p5 { width: 40px;  height: 40px;  background: var(--green);      left: 50%; top: 85%; animation-duration: 20s; animation-delay:  -6s; }
 .p6 { width: 90px;  height: 90px;  background: var(--yellow-sat); left: 40%; top: 40%; animation-duration: 35s; animation-delay: -17s; }
+
+/* Additional low-intensity shapes — hexagons (p7/p8) and soft orbs (p9/p10). */
+.p7 {
+  width: 28px; height: 28px; background: var(--green);
+  left: 30%; top: 28%;
+  opacity: 0.05; border-radius: 0;
+  clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  animation: floatDiag linear infinite;
+  animation-duration: 28s; animation-delay: -11s;
+}
+.p8 {
+  width: 38px; height: 38px; background: var(--red-light);
+  left: 68%; top: 52%;
+  opacity: 0.05; border-radius: 0;
+  clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  animation: floatDiag linear infinite;
+  animation-duration: 24s; animation-delay: -5s;
+}
+.p9  { width: 22px; height: 22px; background: var(--yellow);     left: 12%; top: 72%; opacity: 0.04; animation-duration: 16s; animation-delay: -13s; }
+.p10 { width: 60px; height: 60px; background: var(--green-dark); left: 88%; top: 32%; opacity: 0.04; animation-duration: 40s; animation-delay: -22s; }
+
+/* Subtle circuit-trace lines drifting across the bg (very low opacity). */
+.bg-trace {
+  position: absolute; pointer-events: none;
+  height: 1px; border-radius: 1px;
+  background: linear-gradient(90deg, transparent, rgba(105,240,174,0.25), transparent);
+  animation: traceScroll linear infinite;
+}
+.bt1 { width: 180px; left: 5%;  top: 35%; animation-duration: 14s; animation-delay:  -3s; }
+.bt2 { width: 120px; left: 55%; top: 62%; animation-duration: 19s; animation-delay:  -8s; }
+.bt3 { width: 220px; left: 25%; top: 80%; animation-duration: 24s; animation-delay: -15s; }
+
 @keyframes floatParticle {
   0%,  100% { transform: translateY(0)     rotate(0deg); }
   50%       { transform: translateY(-40px) rotate(180deg); }
+}
+@keyframes floatDiag {
+  0%   { transform: translate(0, 0)       rotate(0deg); }
+  33%  { transform: translate(18px,-28px) rotate(120deg); }
+  66%  { transform: translate(-12px,12px) rotate(240deg); }
+  100% { transform: translate(0, 0)       rotate(360deg); }
+}
+@keyframes traceScroll {
+  from { transform: translateX(-100%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  to   { transform: translateX(120vw);  opacity: 0; }
 }
 
 /* ---------- Left Panel (mascot + chat) ---------------------------------- */
@@ -457,24 +503,33 @@ body {
   pointer-events: none; z-index: 1;
 }
 
-/* Pity meter — label + track */
-.pity-bar-wrapper {
-  display: flex; align-items: center; gap: 6px;
+/* Luck warmup indicator — row of 5 circuit-node dots.
+   No label so the pity threshold is not directly readable by the player.
+   Color bands: cool (green) → warm (yellow) → hot (red). */
+.luck-indicator {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 2px 0;
 }
-.pity-bar-label {
-  font-family: var(--font-mono); font-size: 0.52rem;
-  letter-spacing: 1px; color: var(--text-dim); flex-shrink: 0;
-  opacity: 0.55;
+.luck-node {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(105,240,174,0.07);
+  border: 1px solid rgba(105,240,174,0.12);
+  transition: background 0.55s ease, border-color 0.55s ease, box-shadow 0.55s ease;
 }
-.pity-bar-track {
-  flex: 1; height: 6px; border-radius: 3px;
-  background: rgba(255,255,255,0.06);
-  overflow: hidden;
+.luck-node.lk-cool {
+  background: rgba(105,240,174,0.48);
+  border-color: rgba(105,240,174,0.55);
+  box-shadow: 0 0 4px rgba(105,240,174,0.35);
 }
-.pity-bar-fill {
-  height: 100%; width: 0%; border-radius: 3px;
-  background: rgba(105,240,174,0.35);
-  transition: width 0.35s ease-out, background-color 0.5s ease;
+.luck-node.lk-warm {
+  background: rgba(255,214,0,0.55);
+  border-color: rgba(255,214,0,0.60);
+  box-shadow: 0 0 5px rgba(255,214,0,0.40);
+}
+.luck-node.lk-hot {
+  background: rgba(229,57,53,0.65);
+  border-color: rgba(229,57,53,0.70);
+  box-shadow: 0 0 6px rgba(229,57,53,0.50);
 }
 
 /* Near-miss + result live regions */
@@ -1002,11 +1057,11 @@ body {
   background: var(--surface2);
   border: 1px solid var(--yellow-sat);
   color: var(--yellow);
-  font-family: var(--font-mono); font-size: 0.82rem;
-  padding: 10px 16px; border-radius: var(--radius);
+  font-family: var(--font-mono); font-size: 0.80rem;
+  padding: 8px 14px; border-radius: var(--radius);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), var(--glow-yell);
   display: flex; align-items: center; gap: 10px;
-  max-width: min(420px, 90vw);
+  max-width: min(380px, 90vw);
   pointer-events: none;
   animation: toastDropIn 0.3s cubic-bezier(0.2, 0, 0.2, 1) forwards;
 }
@@ -1046,15 +1101,48 @@ body[data-reducedmotion="true"] *::after {
   animation-duration: 0.001ms !important;
   transition-duration: 0.001ms !important;
 }
-/* Epilepsy-safe: disable all flashing + pulsing animations.
-   Iteration 09: ring-middle pulse and power-core-glow are now
-   both suppressed (ring pulse was missing from Iteration 08). */
+/* Epilepsy-safe: disable flashing, pulsing, and high-intensity motion.
+   The selector list is intentionally broad — every animated element that
+   produces repetitive light changes or rapid motion is covered here.
+
+   Elements already suppressed in JS (flash overlay, coins) are also listed
+   for defence-in-depth if the JS guard ever fails.
+
+   Two exceptions preserved in epilepsy mode:
+     • Win celebration overlay — fades in gently (replaced animation below).
+     • Lights-bar "active" state on spin — solid colour, not cycling. */
 body[data-epilepsysafe="true"] .win-flash-overlay,
 body[data-epilepsysafe="true"] .lights-bar.win-lights .light,
 body[data-epilepsysafe="true"] .power-core-glow,
 body[data-epilepsysafe="true"] .power-core .ring-middle,
-body[data-epilepsysafe="true"] .jackpot-amount {
+body[data-epilepsysafe="true"] .jackpot-amount,
+body[data-epilepsysafe="true"] .particle,
+body[data-epilepsysafe="true"] .bg-trace,
+body[data-epilepsysafe="true"] .antenna-ball,
+body[data-epilepsysafe="true"] .eye-pupil,
+body[data-epilepsysafe="true"] .cl1,
+body[data-epilepsysafe="true"] .cl2,
+body[data-epilepsysafe="true"] .cl3,
+body[data-epilepsysafe="true"] #robot-svg,
+body[data-epilepsysafe="true"] .robot-mascot.robot-dance  #robot-svg,
+body[data-epilepsysafe="true"] .robot-mascot.robot-excited #robot-svg,
+body[data-epilepsysafe="true"] .robot-mascot.robot-sad    #robot-svg,
+body[data-epilepsysafe="true"] .coin,
+body[data-epilepsysafe="true"] .storage-warning,
+body[data-epilepsysafe="true"] .power-core.is-spinning .power-core-icon,
+body[data-epilepsysafe="true"] .power-core.is-spinning .ring-middle {
   animation: none !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Win celebration: replace aggressive scale-pop with a gentle fade in epilepsy mode. */
+@keyframes winFadeInSafe {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+body[data-epilepsysafe="true"] .win-amount-display,
+body[data-epilepsysafe="true"] .win-label-display {
+  animation: winFadeInSafe 0.45s ease forwards !important;
 }
 
 /* ---------- Scrollbar --------------------------------------------------- */

@@ -14,6 +14,10 @@
  *
  * The AudioContext is created lazily and must be unlocked via a user
  * gesture (browser policy) — `Audio.unlock()` is called on first click.
+ *
+ * Iteration 14:
+ *   • Added `playDenied()` — mechanical "rejected" buzz for insufficient-
+ *     balance spin attempts and other hard rejections.
  */
 const Audio = (() => {
 
@@ -211,6 +215,22 @@ const Audio = (() => {
     [440, 554, 659, 880].forEach((f, i) => _tone(f, 'triangle', 0.3, 0.25, _sfxGain, i * 0.09));
   }
 
+  /**
+   * Mechanical "denied" buzz — harsh square-wave pulse with a
+   * low-frequency noise thud. Used when a spin is rejected (e.g. for
+   * insufficient balance). Distinct from the loss sting so players
+   * can tell "you lost" from "the machine refused you".
+   * @returns {void}
+   */
+  function _playDenied() {
+    if (!_sfxEnabled) return;
+    // Two harsh descending square pulses.
+    _tone(180, 'square', 0.12, 0.25, _sfxGain, 0.00);
+    _tone(140, 'square', 0.14, 0.25, _sfxGain, 0.12);
+    // Low thud burst layered underneath.
+    _noise(0.18, 0.08, _sfxGain);
+  }
+
   // ── Background music: simple robotic arpeggio loop ──────────────
 
   /** Note set (C-minor pentatonic-ish). */
@@ -262,6 +282,7 @@ const Audio = (() => {
     /** @returns {void} */ playClick()       { _playClick(); },
     /** @returns {void} */ playAchievement() { _playAchievement(); },
     /** @returns {void} */ playWelcome()     { _playWelcome(); },
+    /** @returns {void} */ playDenied()      { _playDenied(); },
 
     /**
      * Enable or disable sound effects.

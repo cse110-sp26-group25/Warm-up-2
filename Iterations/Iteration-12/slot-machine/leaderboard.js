@@ -22,6 +22,8 @@ const Leaderboard = (() => {
     TICK_MIN_MS:     3000,
     /** Max interval between simulated bot wins (ms). */
     TICK_MAX_MS:     9000,
+    /** Score ceiling for bot entries — stops growing at this amount. */
+    BOT_MAX_SCORE:   50000,
   });
 
   /** @type {string[]} Rotation of humorous bot names. */
@@ -100,8 +102,11 @@ const Leaderboard = (() => {
   function _simulateBotActivity() {
     const idx = RNG.randInt(0, _entries.length - 1);
     const entry = _entries[idx];
-    if (entry.isBot) {
-      entry.amount += RNG.randInt(CONFIG.BOT_GAIN_MIN, CONFIG.BOT_GAIN_MAX);
+    if (entry.isBot && entry.amount < CONFIG.BOT_MAX_SCORE) {
+      entry.amount = Math.min(
+        entry.amount + RNG.randInt(CONFIG.BOT_GAIN_MIN, CONFIG.BOT_GAIN_MAX),
+        CONFIG.BOT_MAX_SCORE
+      );
     }
     _sort();
     _notify('update', _entries[idx]);

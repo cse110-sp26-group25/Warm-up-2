@@ -640,6 +640,166 @@ const GameLogic = (() => {
     },
 
     /**
+     * Batched RTP simulation with early termination (Iteration 17).
+     *
+     * @description Improves on `verifyRTP()` in two ways:
+     *
+     *   1. **Batched execution.** Instead of one monolithic loop, spins are
+     *      grouped into `batchSize` chunks. Each batch is statistically
+     *      independent (fresh pity/jackpot state) so per-batch RTP values
+     *      form an iid sample we can apply the Central Limit Theorem to.
+     *
+     *   2. **Early termination.** After each batch a 95 % confidence interval
+     *      is computed for the mean base-game RTP. Once the CI half-width
+     *      drops below `earlyStopCI` (default 0.1 pp), the simulation is
+     *      considered converged and stops — typically after 3–5 batches
+     *      (900k–1.5M spins) rather than the full 3M.
+     *
+     *   3. **Analytical jackpot RTP.** Jackpot contribution is computed via
+     *      expected-value math rather than simulation, avoiding the extreme
+     *      variance from the ~1-in-1M jackpot event:
+     *
+     *        P_trigger   = (jackpot_weight / total_weight)^3
+     *        E[pool]     ≈ JACKPOT_SEED + (bet × JACKPOT_FRACTION) / P_trigger
+     *        jackpot_rtp = P_trigger × E[pool]
+     *
+     * @param {{
+     *   totalSpins?:  number,   — total spins budget  (default 3 000 000)
+     *   batchSize?:   number,   — spins per batch      (default 300 000)
+     *   earlyStopCI?: number,   — 95% CI half-width threshold in pp (default 0.1)
+     * }} [opts]
+     * @returns {{
+     *   totalSpins:    number,
+     *   batchesRun:    number,
+     *   stoppedEarly:  boolean,
+     *   baseRTP:       number,
+     *   jackpotRTP_ev: number,
+     *   totalRTP:      number,
+     *   withinTarget:  boolean,
+     *   ciHalfWidth:   number,
+     *   jackpotHits:   number,
+     *   pityFires:     number,
+     *   batchBaseRtps: number[],
+     * }}
+     */
+    verifyRTPBatched({ totalSpins = 3_000_000, batchSize = 300_000, earlyStopCI = 0.1 } = {}) {
+      const BET         = 1;
+      const BASE_TARGET = CONFIG.JACKPOT_FRACTION * 100;          // jackpot contribution (pp)
+      const FULL_TARGET = 92;
+      const TOLERANCE   = 0.5;
+
+      // ── Analytical jackpot RTP ──────────────────────────────────
+      const P_JP        = SYMBOLS.find(s => s.id === 'jackpot').weight / TOTAL_WEIGHT;
+      const P_TRIGGER   = P_JP ** 3;
+      const E_POOL      = CONFIG.JACKPOT_SEED + (BET * CONFIG.JACKPOT_FRACTION) / P_TRIGGER;
+      const jackpotRTP_ev = P_TRIGGER * E_POOL * 100;  // percentage points
+
+      const BASE_RTP_TARGET = FULL_TARGET - jackpotRTP_ev; // ≈ 87 %
+
+      // ── Batched simulation ───────────────────────────────────────
+      const maxBatches    = Math.ceil(totalSpins / batchSize);
+      const batchBaseRtps = [];
+      let grandWagered    = 0;
+      let grandRetBase    = 0;
+      let totalJpHits     = 0;
+      let totalPityFires  = 0;
+      let stoppedEarly    = false;
+
+      for (let b = 0; b < maxBatches; b++) {
+        let wag     = 0;
+        let retBase = 0;
+        let jpHits  = 0;
+        let pFires  = 0;
+        let simJp   = CONFIG.JACKPOT_SEED;
+        let simPity = 0;
+
+        for (let i = 0; i < batchSize; i++) {
+          wag   += BET;
+          simJp += BET * CONFIG.JACKPOT_FRACTION;
+
+          const syms = [];
+          for (let j = 0; j < CONFIG.REEL_COUNT; j++) syms.push(_weightedPickSymbol(Math.random));
+
+          let pityFlag = false;
+          if (simPity >= CONFIG.PITY_THRESHOLD) {
+            syms[1]  = syms[0];
+            pityFlag = true;
+            simPity  = 0;
+            pFires++;
+          }
+
+          const res = _resolve(syms, BET);
+          if (res.type === 'jackpot') {
+            simJp = CONFIG.JACKPOT_SEED;
+            jpHits++;
+            if (!pityFlag) simPity = 0;
+          } else {
+            retBase += res.payout;
+            if (res.payout === 0 && !pityFlag) simPity++;
+          }
+        }
+
+        const batchRTP = (retBase / wag) * 100;
+        batchBaseRtps.push(batchRTP);
+        grandWagered   += wag;
+        grandRetBase   += retBase;
+        totalJpHits    += jpHits;
+        totalPityFires += pFires;
+
+        // Early termination after ≥3 batches to avoid false convergence.
+        if (b >= 2) {
+          // Compute 95 % CI half-width: 1.96 × σ / √n
+          const n    = batchBaseRtps.length;
+          const mean = batchBaseRtps.reduce((a, v) => a + v, 0) / n;
+          const sd   = Math.sqrt(batchBaseRtps.reduce((a, v) => a + (v - mean) ** 2, 0) / n);
+          const ci   = 1.96 * sd / Math.sqrt(n);
+          if (ci < earlyStopCI) {
+            stoppedEarly = true;
+            break;
+          }
+        }
+      }
+
+      const baseRTP      = (grandRetBase / grandWagered) * 100;
+      const totalRTP     = baseRTP + jackpotRTP_ev;
+      const withinTarget = Math.abs(baseRTP - BASE_RTP_TARGET) <= TOLERANCE;
+
+      // Recompute final CI for reporting.
+      const n    = batchBaseRtps.length;
+      const mean = batchBaseRtps.reduce((a, v) => a + v, 0) / n;
+      const sd   = Math.sqrt(batchBaseRtps.reduce((a, v) => a + (v - mean) ** 2, 0) / n);
+      const ciHalfWidth = 1.96 * sd / Math.sqrt(n);
+
+      // eslint-disable-next-line no-console
+      console.log(
+        `[GameLogic.verifyRTPBatched] spins=${grandWagered.toLocaleString()} ` +
+        `(${batchBaseRtps.length} batches × ${batchSize.toLocaleString()})` +
+        (stoppedEarly ? ' [early stop]' : '') + '\n' +
+        `  base RTP:       ${baseRTP.toFixed(3)} % (target: ${BASE_RTP_TARGET.toFixed(1)} % ± ${TOLERANCE} %)\n` +
+        `  jackpot RTP EV: ${jackpotRTP_ev.toFixed(3)} % (analytical)\n` +
+        `  total RTP:      ${totalRTP.toFixed(3)} %\n` +
+        `  95% CI:         ± ${ciHalfWidth.toFixed(4)} pp\n` +
+        `  withinTarget:   ${withinTarget}`
+      );
+
+      return {
+        totalSpins:    grandWagered,
+        batchesRun:    batchBaseRtps.length,
+        stoppedEarly,
+        baseRTP,
+        jackpotRTP_ev,
+        totalRTP,
+        withinTarget,
+        ciHalfWidth,
+        jackpotHits:   totalJpHits,
+        pityFires:     totalPityFires,
+        batchBaseRtps,
+        baseTarget:    BASE_RTP_TARGET,
+        tolerance:     TOLERANCE,
+      };
+    },
+
+    /**
      * Grow the jackpot externally (e.g. from simulated leaderboard bets).
      * @param {number} amount - Dollar amount to add.
      * @returns {void}

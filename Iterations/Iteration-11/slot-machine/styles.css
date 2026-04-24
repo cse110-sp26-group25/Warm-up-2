@@ -275,7 +275,7 @@ body {
   padding: 20px;
   width: 100%; max-width: 560px;
   box-shadow: 0 0 40px rgba(229,57,53,0.30), inset 0 0 20px rgba(0,0,0,0.4);
-  display: flex; flex-direction: column; gap: 14px;
+  display: flex; flex-direction: column; gap: 16px;
   position: relative;
 }
 
@@ -363,14 +363,14 @@ body {
   transition: transform 0s;
 }
 
-/* ── Motion-blur states (Iteration 09: pure CSS, no SVG filter) ──────
-   Replaces the SVG <feGaussianBlur> approach from Iteration 08.
-   CSS blur() is GPU-composited and avoids the SVG-filter rendering
-   jank seen in Firefox and Safari.
+/* ── Motion-blur states (rAF-driven animation, Iteration 12) ─────────
+   Transform is driven frame-by-frame by requestAnimationFrame in
+   uiReels.js. These classes control only filter + opacity — they
+   transition naturally via CSS while rAF owns the translateY.
 
    .is-spinning      : heavy CSS blur + opacity dip (strip at full speed)
    .is-decelerating  : light blur as strip nears its target stop
-   .is-settling      : no blur; overshoot + bounce-back only
+   .is-settling      : no blur; overshoot + bounce-back phase
    -------------------------------------------------------------------- */
 .reel-strip.is-spinning {
   filter: blur(2px);
@@ -406,6 +406,18 @@ body {
   border-top:    2px solid rgba(255,241,118,0.45);
   border-bottom: 2px solid rgba(255,241,118,0.45);
   pointer-events: none; z-index: 1;
+}
+
+/* Pity meter progress bar */
+.pity-bar-wrapper {
+  height: 6px; border-radius: 3px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.pity-bar-fill {
+  height: 100%; width: 0%; border-radius: 3px;
+  background: rgba(105,240,174,0.35);
+  transition: width 0.35s ease-out, background-color 0.5s ease;
 }
 
 /* Near-miss + result live regions */
@@ -479,7 +491,7 @@ body {
 .power-core {
   position: relative;
   width: var(--core-size); height: var(--core-size);
-  margin: 6px auto 2px;
+  margin: 14px auto 6px;
   background: transparent; border: none; padding: 0;
   cursor: pointer; outline: none;
   font: inherit; color: inherit;
@@ -588,7 +600,7 @@ body {
 /* Winnings figure */
 .winnings-display {
   text-align: center; font-family: var(--font-mono);
-  padding: 8px; background: var(--bg);
+  padding: 10px 8px; background: var(--bg);
   border: 2px solid var(--green); border-radius: var(--radius);
   box-shadow: var(--glow-green);
 }
@@ -684,6 +696,32 @@ body {
   opacity: 0; pointer-events: none; transition: opacity 0.2s;
   z-index: 50;
 }
+
+/* ---------- Payout Table ------------------------------------------------- */
+.payout-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-mono); font-size: 0.82rem;
+}
+.payout-table th {
+  color: var(--text-dim); letter-spacing: 2px; font-size: 0.68rem;
+  padding: 6px 4px; text-align: center;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+}
+.payout-table th:first-child { text-align: left; padding-left: 0; }
+.payout-table td {
+  padding: 7px 4px; text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--green);
+}
+.payout-table td:first-child { text-align: left; padding-left: 0; }
+.pt-sym-cell {
+  display: flex; align-items: center; gap: 8px;
+}
+.pt-sym-icon { width: 36px; height: 36px; flex-shrink: 0; }
+.pt-sym-label { color: var(--text); font-weight: 700; font-size: 0.78rem; }
+.pt-jp  { color: var(--yellow); font-weight: 700; }
+.pt-nil { color: var(--text-dim); }
 
 /* ---------- Slide-over Panels ------------------------------------------- */
 .panel-overlay {

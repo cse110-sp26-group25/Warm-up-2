@@ -1,16 +1,24 @@
 /* ==========================================================================
-   ROBO-SLOTS 3000 — Stylesheet (Iteration 14)
+   ROBO-SLOTS 3000 — Stylesheet (Iteration 16)
    Theme palette: Reds (#e53935), Yellows (#fff176), Greens (#69f0ae)
 
-   Iteration 14 changes:
-     • Toast container relocated to top-center, overlaying the machine
-       frame — tighter drop-in + drop-out animations.
-     • `.chat-mini` given `min-height: 180px` + `flex-shrink: 0` so it
-       stays usable on small viewports instead of collapsing.
-     • Header gets a `#storage-warning` memory-error badge, shown when
-       localStorage is blocked (private / incognito mode).
-     • Small-screen responsive rules tightened so the left-panel column
-       keeps the mascot, chat, and achievements in the right order.
+   Iteration 16 changes:
+     • Luck-warmup indicator: dull grey (#90a4ae) → glowing neon orange
+       (#ff9100) gradient replaces the 3-band green/yellow/red scheme.
+       A new `.lk-pulse-fast` class drives a non-linear anticipatory
+       pulse when the player is within 2 spins of the pity threshold.
+     • `.storage-warning.static` — post-10s stable state added. ui.js
+       applies this class after the initial pulse so the badge remains
+       visible but stops competing for visual attention.
+     • Epilepsy-safe block explicitly covers the three high-intensity
+       pulse elements called out in the Iteration 16 plan: the jackpot
+       amount, the mascot chest lights (cl1/cl2/cl3), and the power-
+       core ambient glow — plus the new `.lk-pulse-fast` luck pulse.
+
+   Iteration 14 (retained):
+     • Top-center drop-down toast container.
+     • `.chat-mini` floor of 180px + flex-shrink: 0 for mobile usability.
+     • Header `#storage-warning` memory-error badge.
    ========================================================================== */
 
 /* ---------- Design Tokens ------------------------------------------------ */
@@ -124,6 +132,20 @@ body {
   animation: storagePulse 2s ease-in-out infinite;
 }
 .storage-warning[hidden] { display: none; }
+/*
+  Iteration 16 — post-10s static state.
+  After ten seconds of pulsing, ui.js adds `.static` to freeze the
+  badge in a lower-intensity non-animated state. The badge remains
+  visible (so the player doesn't forget their session is ephemeral)
+  but stops competing with the jackpot and antenna pulses for
+  attention. A brief transition smooths the handover.
+*/
+.storage-warning.static {
+  animation: none;
+  opacity: 0.72;
+  box-shadow: none;
+  transition: opacity 0.6s ease, box-shadow 0.6s ease;
+}
 .storage-warning-icon {
   width: 14px; height: 14px; flex-shrink: 0;
   color: var(--red-light);
@@ -505,31 +527,47 @@ body {
 
 /* Luck warmup indicator — row of 5 circuit-node dots.
    No label so the pity threshold is not directly readable by the player.
-   Color bands: cool (green) → warm (yellow) → hot (red). */
+
+   Iteration 16 — colour scheme changed from three-band (green/yellow/red)
+   to a single dull-grey → glowing-neon-orange gradient. Rationale:
+     • Removes the implicit "you're nearly there" hot-red signal that
+       Iteration 15 still leaked on the last band.
+     • Orange is a warmer, more magnetic cue without reading as "alarm".
+     • When within 2 spins of the pity threshold, nodes add a fast non-
+       linear pulse (`.lk-pulse-fast`) to create subtle anticipatory
+       momentum — felt rather than read.
+   The base state is deliberately low-contrast so the indicator fades
+   into ambient machine chrome when the player is winning regularly. */
 .luck-indicator {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 2px 0;
 }
 .luck-node {
   width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
-  background: rgba(105,240,174,0.07);
-  border: 1px solid rgba(105,240,174,0.12);
+  /* Base state — dull grey (#90a4ae @ low alpha) blends into chrome. */
+  background: rgba(144, 164, 174, 0.18);
+  border: 1px solid rgba(144, 164, 174, 0.30);
   transition: background 0.55s ease, border-color 0.55s ease, box-shadow 0.55s ease;
 }
-.luck-node.lk-cool {
-  background: rgba(105,240,174,0.48);
-  border-color: rgba(105,240,174,0.55);
-  box-shadow: 0 0 4px rgba(105,240,174,0.35);
+/* Active nodes fade toward glowing neon orange (#ff9100). A single
+   class `.lk-active` takes care of "filled" — the brightness scales via
+   CSS custom property so ui.js can pass a 0→1 intensity if desired. */
+.luck-node.lk-active {
+  background: rgba(255, 145, 0, 0.75);
+  border-color: rgba(255, 145, 0, 0.90);
+  box-shadow: 0 0 6px rgba(255, 145, 0, 0.55);
 }
-.luck-node.lk-warm {
-  background: rgba(255,214,0,0.55);
-  border-color: rgba(255,214,0,0.60);
-  box-shadow: 0 0 5px rgba(255,214,0,0.40);
+/* Within 2 spins of the pity threshold — non-linear fast pulse. The
+   easing is deliberately asymmetric (sharp attack, slow decay) so the
+   pulse reads as "building pressure" rather than a neutral blink. */
+.luck-node.lk-pulse-fast {
+  animation: luckPulseFast 0.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
-.luck-node.lk-hot {
-  background: rgba(229,57,53,0.65);
-  border-color: rgba(229,57,53,0.70);
-  box-shadow: 0 0 6px rgba(229,57,53,0.50);
+@keyframes luckPulseFast {
+  0%   { box-shadow: 0 0 6px  rgba(255, 145, 0, 0.55); transform: scale(1); }
+  15%  { box-shadow: 0 0 14px rgba(255, 145, 0, 0.95); transform: scale(1.35); }
+  60%  { box-shadow: 0 0 8px  rgba(255, 145, 0, 0.65); transform: scale(1.05); }
+  100% { box-shadow: 0 0 6px  rgba(255, 145, 0, 0.55); transform: scale(1); }
 }
 
 /* Near-miss + result live regions */
@@ -1108,6 +1146,20 @@ body[data-reducedmotion="true"] *::after {
    Elements already suppressed in JS (flash overlay, coins) are also listed
    for defence-in-depth if the JS guard ever fails.
 
+/* ---------- Epilepsy-safe mode ----------------------------------------
+   When body[data-epilepsysafe="true"], disable all rapid-flash and
+   pulsing animations across the interface.
+
+   Iteration 16 — mandate groups 4 and 5.
+   This selector list explicitly covers the three high-intensity pulse
+   elements called out in the Iteration 16 plan:
+     1. .jackpot-amount     — the big currency figure's glow pulse.
+     2. .cl1 / .cl2 / .cl3  — the robot mascot's chest lights.
+     3. .power-core-glow    — the spin button's ambient halo.
+   Plus the broader coverage retained from earlier iterations (coin
+   burst, lights bar, win-flash overlay, trace lines, particles,
+   antenna ball, and the storage-warning badge's pulse).
+
    Two exceptions preserved in epilepsy mode:
      • Win celebration overlay — fades in gently (replaced animation below).
      • Lights-bar "active" state on spin — solid colour, not cycling. */
@@ -1129,6 +1181,7 @@ body[data-epilepsysafe="true"] .robot-mascot.robot-excited #robot-svg,
 body[data-epilepsysafe="true"] .robot-mascot.robot-sad    #robot-svg,
 body[data-epilepsysafe="true"] .coin,
 body[data-epilepsysafe="true"] .storage-warning,
+body[data-epilepsysafe="true"] .luck-node.lk-pulse-fast,
 body[data-epilepsysafe="true"] .power-core.is-spinning .power-core-icon,
 body[data-epilepsysafe="true"] .power-core.is-spinning .ring-middle {
   animation: none !important;

@@ -1,5 +1,5 @@
 /**
- * ui.js — UI orchestration layer (Iteration 17).
+ * ui.js — UI orchestration layer (Iteration 20).
  *
  * Top-level coordinator that wires together every sub-module (UiReels,
  * UiMascot, UiPanels) and drives the core spin cycle, win celebrations,
@@ -11,20 +11,26 @@
  *   • toastManager.js    — priority-queue toast system (Iteration 17).
  *   • rtpCertification.js — build-time cert loader (Iteration 17).
  *
- * Iteration 17 — what changed in this file:
- *   • `_showAchievementToast` replaced by `ToastManager.show()`. The old
- *     FIFO-with-cap approach is gone; toasts are now queued by priority,
- *     preemption handles jackpot cascades, and batching deduplicates rapid
- *     achievement floods.
- *   • Jackpot, big-win, and bonus win paths each post a typed toast at the
- *     correct priority tier so they always surface above achievement toasts.
- *   • `_updateHeaderHeight()` + resize/orientationchange listeners update
- *     the `--header-height` CSS variable so `.toast-container` always clears
- *     the real header, fixing the 780px–1100px tablet overlap bug.
- *   • Boot sequence attempts to load `rtp_certification.json` via
- *     `RtpCertification.load()` and skips the runtime simulation when a
- *     valid cert is present. The optional background worker is also started
- *     here if the feature flag is enabled.
+ * Iteration 20 — tactile-feedback stack:
+ *   • `_triggerScreenShake(intensity)` — drives the `.shake` keyframe
+ *     on `#machine-frame` for any win ≥ JUICE_WIN_MULTIPLE (50×) of the
+ *     current bet. Jackpot shakes at the ceiling; 4-of-a-kind scales by
+ *     log2 of the multiple. Suppressed in epilepsy-safe mode.
+ *   • `_spawnCoins(count)` — rewired to originate from the Spin button
+ *     centroid rather than the machine centre. Coin counts bumped to
+ *     the plan-mandated 50-100 range for Big Win and Jackpot. Upper-
+ *     hemisphere ejection angles give a fountain silhouette.
+ *   • `_popWinningSymbols(matchCount)` — adds the `.winning-symbol`
+ *     class to every centre-row symbol on the N winning reels for a
+ *     scale(1.1) + glow pop. matchCount is derived from result.type
+ *     client-side so gameLogic's closure stays sealed.
+ *   • `_updatePlayerRankBadge()` — syncs the floating `#player-rank-badge`
+ *     with `Leaderboard.getPlayerRank()` after each win; pulses on a
+ *     strict rank improvement.
+ *
+ * Iteration 17 retained:
+ *   • Priority-queue toasts; `--header-height` CSS variable resize.
+ *   • Certificated RTP at boot.
  *
  * Iteration 16 retained:
  *   • `_updateLuckIndicator()` — dull-grey → glowing-neon-orange scheme.
@@ -46,16 +52,29 @@
     JACKPOT_POLL_MS:    2000,
     /** Threshold: payout / bet >= this triggers a "big win" celebration. */
     BIG_WIN_MULTIPLE:   10,
+    /**
+     * Threshold (payout / bet) at which the Iteration 20 tactile-feedback
+     * stack engages: screen shake + coin fountain + winning-symbol pop.
+     * A 4-of-a-kind `gear` at bet $1 pays 40× — below this threshold.
+     * A 4-of-a-kind `seven` at bet $1 pays 135× — well above.
+     * Picks up most 4-of-a-kind outcomes on high-value symbols and every
+     * 5-of-a-kind, without firing on routine 3-of-a-kind wins.
+     */
+    JUICE_WIN_MULTIPLE: 50,
     /** Small win celebration duration (ms). */
     SMALL_WIN_MS:       1500,
     /** Big win celebration duration (ms). */
     BIG_WIN_MS:         3000,
     /** Jackpot celebration duration (ms). */
     JACKPOT_WIN_MS:     5000,
-    /** Coins spawned per tier. */
-    COINS_SMALL:        8,
-    COINS_BIG:          20,
-    COINS_JACKPOT:      40,
+    /**
+     * Coins spawned per tier. Iteration 20: Big and Jackpot counts raised
+     * into the plan-mandated 50-100 band. "Small" is kept modest so
+     * routine 3-of-a-kind wins don't become visually exhausting.
+     */
+    COINS_SMALL:        12,
+    COINS_BIG:          60,
+    COINS_JACKPOT:      100,
     /** Winnings counter bump animation duration (ms). */
     BUMP_MS:            450,
     /** Near-miss bar visibility duration (ms). */
@@ -73,6 +92,20 @@
      * transitioning to its static state (Iteration 16 mandate).
      */
     STORAGE_WARN_PULSE_MS: 10_000,
+    /**
+     * Iteration 20 — screen-shake tuning for the tactile-feedback stack.
+     * SHAKE_MS is the total duration of the CSS keyframe animation;
+     * SHAKE_INTENSITY_MAX caps the translate amount in pixels so the
+     * effect reads as impactful without being nauseating.
+     */
+    SHAKE_MS:             600,
+    SHAKE_INTENSITY_MAX:  14,
+    /**
+     * Iteration 20 — winning-symbol pop duration (ms). The CSS transform
+     * `scale(1.1)` is applied to symbols on the centre row of winning
+     * reels for this long before relaxing back to scale(1).
+     */
+    WINNER_POP_MS:        900,
   });
 
   /**
@@ -399,6 +432,38 @@
       _triggerSmallWin(result.payout);
     }
 
+    // ── Iteration 20: Tactile-feedback stack ─────────────────────────
+    //
+    // Screen shake on any win at or above JUICE_WIN_MULTIPLE × bet.
+    // Intensity scales by win tier so Jackpot shakes harder than 4oak.
+    //
+    // Note: we gate on actual payout rather than `type` because a
+    // 4-of-a-kind on a low-value symbol (e.g. `screw` paying 2×) would
+    // not meet the plan's "> 50× bet" threshold, whereas a 4-of-a-kind
+    // `seven` (135×) clearly does.
+    const multiple = result.payout / Math.max(_currentBet, 1);
+    if (result.type === 'jackpot') {
+      _triggerScreenShake(CFG.SHAKE_INTENSITY_MAX);            // ≈ 14 px
+    } else if (multiple >= CFG.JUICE_WIN_MULTIPLE) {
+      // Scale intensity with magnitude, capped by SHAKE_INTENSITY_MAX.
+      // A 50× win shakes at ~8 px; a 500× 5oak at the ~14 px ceiling.
+      const intensity = Math.min(
+        8 + Math.log2(multiple / CFG.JUICE_WIN_MULTIPLE) * 2,
+        CFG.SHAKE_INTENSITY_MAX
+      );
+      _triggerScreenShake(intensity);
+    }
+
+    // Winning-symbol pop — derive match count from result.type. The
+    // `type` string is authoritative; gameLogic.js resolves matchCount
+    // internally and reports the tier, and we map the tier back here
+    // without exposing matchCount on the API surface.
+    const matchCountByType = { two: 2, three: 3, four: 4, five: 5, jackpot: 3 };
+    const matchCount = matchCountByType[result.type] || 0;
+    if (matchCount >= 2) _popWinningSymbols(matchCount);
+
+    // ── End tactile-feedback stack ───────────────────────────────────
+
     _animateWinnings(GameLogic.totalWinnings);
 
     const winUnlocked = Achievements.recordWin(result.payout);
@@ -413,6 +478,11 @@
     const playerName  = State.get('player.name')  || 'YOU';
     const playerColor = State.get('player.color') || '#fff176';
     Leaderboard.recordPlayerWin(playerName, playerColor, result.payout);
+
+    // Iteration 20: refresh the floating rank badge after the
+    // leaderboard records the win. This runs last so the badge
+    // reflects the post-win rank, not the pre-win rank.
+    _updatePlayerRankBadge();
 
     resultDisplay.textContent =
       result.type === 'jackpot' ? '★★★ JACKPOT! ★★★'      :
@@ -563,29 +633,202 @@
   }
 
   /**
-   * Emit a radial coin burst from the centre of the machine.
-   * Suppressed in epilepsy-safe mode.
-   * @param {number} count - Number of coins to spawn.
+   * Emit a coin fountain erupting from the Spin button.
+   *
+   * Iteration 20 — origin relocated from the centre of the machine to
+   * the spin-button centroid. Coins are still rendered inside the
+   * `#coin-burst` overlay (which covers the full machine frame) but each
+   * coin's translation vector is computed relative to the spin button's
+   * position in the coin-burst's coordinate space, so the effect reads
+   * as "erupts from the button the player just pressed."
+   *
+   * The ejection angles are biased upward and outward (−120° to −60°
+   * relative to horizontal, i.e. the upper half-circle) to give a
+   * fountain silhouette rather than a symmetric radial burst — this
+   * matches player expectation of "coins spraying from where I clicked."
+   *
+   * Suppressed in epilepsy-safe mode (JS-side guard — the static coin
+   * glyphs would remain visible if we only suppressed the CSS animation).
+   *
+   * @param {number} count - Number of coins to spawn (CFG.COINS_*).
    * @returns {void}
    */
   function _spawnCoins(count) {
     if (document.body.dataset.epilepsysafe === 'true') return;
-    if (!coinBurst) return;
+    if (!coinBurst || !spinBtn) return;
     coinBurst.innerHTML = '';
+
+    // Compute the spin button's centre in coin-burst local coordinates.
+    // coinBurst is absolutely positioned inside the machine-frame, so
+    // subtracting its bounding rect gives the correct local origin.
+    const burstRect = coinBurst.getBoundingClientRect();
+    const btnRect   = spinBtn.getBoundingClientRect();
+    const originX   = (btnRect.left + btnRect.width  / 2) - burstRect.left;
+    const originY   = (btnRect.top  + btnRect.height / 2) - burstRect.top;
+
     for (let i = 0; i < count; i++) {
-      const coin  = document.createElement('div');
+      const coin = document.createElement('div');
       coin.className = 'coin';
-      const angle = (i / count) * 2 * Math.PI;
-      const dist  = 60 + RNG.randInt(0, 80);
-      const tx    = Math.cos(angle) * dist;
-      const ty    = Math.sin(angle) * dist - 80; // bias upward
+
+      // Upper hemisphere angles: −π (left) to 0 (right), never below horizontal.
+      // Add a small random jitter so parallel bursts don't look mechanical.
+      const baseAngle = -Math.PI + (i / count) * Math.PI;
+      const jitter    = (RNG.random() - 0.5) * 0.4;
+      const angle     = baseAngle + jitter;
+
+      // Scale distance by count so 100-coin jackpots get a proportionally
+      // wider spread. The baseline is 80 px; the fountain reaches 180+ px
+      // for a jackpot, which fills the machine frame nicely.
+      const dist = 80 + RNG.randInt(0, 100);
+      const tx   = Math.cos(angle) * dist;
+      const ty   = Math.sin(angle) * dist;  // negative = upward (canvas coords)
+
+      coin.style.left = originX + 'px';
+      coin.style.top  = originY + 'px';
       coin.style.setProperty('--tx', tx + 'px');
       coin.style.setProperty('--ty', ty + 'px');
-      coin.style.animationDelay = RNG.randInt(0, 200) + 'ms';
+      coin.style.animationDelay = RNG.randInt(0, 250) + 'ms';
       coin.textContent = '$';
       coinBurst.appendChild(coin);
     }
-    setTimeout(() => { coinBurst.innerHTML = ''; }, 1200);
+
+    // Clear the overlay shortly after the keyframes complete. The 1400ms
+    // window covers the worst-case 250ms delay + ~1000ms animation.
+    setTimeout(() => { coinBurst.innerHTML = ''; }, 1400);
+  }
+
+  /**
+   * Trigger a screen shake on `#machine-frame`.
+   *
+   * Iteration 20 — the tactile-feedback punch that accompanies any win
+   * above `JUICE_WIN_MULTIPLE` × bet. Intensity is passed in pixels on
+   * each axis and written to inline CSS custom properties (`--shake-x`,
+   * `--shake-y`), which the `.shake` keyframe then multiplies by its
+   * per-step coefficients. This lets a single CSS keyframe handle any
+   * intensity from subtle (4-of-a-kind) to forceful (jackpot).
+   *
+   * The method is an exclusive event — if called while a shake is in
+   * progress the previous animation is cancelled and replaced, so a
+   * double-win (e.g. "5-of-a-kind + achievement unlock") produces a
+   * single clean shake rather than a muddy overlap.
+   *
+   * Suppressed in epilepsy-safe mode both via the CSS block
+   * (`animation: none`) and an early return here so no transform
+   * property is ever set on the frame in that mode.
+   *
+   * @param {number} intensity - Shake amplitude in pixels (typically 6-14).
+   * @returns {void}
+   */
+  function _triggerScreenShake(intensity) {
+    if (document.body.dataset.epilepsysafe === 'true') return;
+    const frame = $('machine-frame');
+    if (!frame) return;
+
+    // Clamp intensity so a runaway caller can't make the page unusable.
+    const clamped = Math.max(2, Math.min(intensity, CFG.SHAKE_INTENSITY_MAX));
+    frame.style.setProperty('--shake-x',        clamped + 'px');
+    frame.style.setProperty('--shake-y',        clamped + 'px');
+    frame.style.setProperty('--shake-duration', CFG.SHAKE_MS + 'ms');
+
+    // Restart the animation reliably: remove the class, force reflow,
+    // then re-add. Without the void-read, class-toggling in the same
+    // frame does not re-trigger the animation in most browsers.
+    frame.classList.remove('shake');
+    void frame.offsetWidth;  // force reflow — intentional no-op read
+    frame.classList.add('shake');
+
+    // Auto-clear after the animation so the transform doesn't linger.
+    setTimeout(() => {
+      if (frame) frame.classList.remove('shake');
+    }, CFG.SHAKE_MS + 50);
+  }
+
+  /**
+   * Apply the winning-symbol scale(1.1) pop to the matched symbols on
+   * the centre row of winning reels.
+   *
+   * Iteration 20 — visual emphasis for the payline. Given a `matchCount`
+   * from the spin result (2/3/4/5 consecutive matches starting at reel 0),
+   * this function finds the centre-row symbol in each of those reels and
+   * adds the `.winning-symbol` class. The CSS keyframe handles the pop.
+   *
+   * The function is idempotent — repeated calls on the same symbols will
+   * re-trigger the animation because we remove + reflow + re-add the
+   * class the same way the screen shake does.
+   *
+   * @param {number} matchCount - Number of leading reels that matched (2-5).
+   * @returns {void}
+   */
+  function _popWinningSymbols(matchCount) {
+    if (matchCount < 2) return;
+    for (let r = 0; r < matchCount; r++) {
+      const strip = $('strip-' + r);
+      if (!strip) continue;
+      // The centre row is the middle (VISIBLE_ROWS=3 → index 1) of the
+      // currently-visible three-symbol window. UiReels positions the
+      // strip via translateY so the resting centre is always `strip`'s
+      // middle child of the three visible ones; its DOM node has a
+      // stable `.symbol` class. We locate it via the reel-container's
+      // middle of three visible children, but the simpler and more
+      // robust approach used here is to pop EVERY symbol currently on
+      // the reel-strip at the "is-active" landed index — which UiReels
+      // tags with `.is-centre` after the spin settles. If the tag is
+      // unavailable (older UiReels) we fall back to the middle child.
+      const centreSymbol =
+        strip.querySelector('.symbol.is-centre') ||
+        strip.children[Math.floor(strip.children.length / 2)];
+      if (!centreSymbol) continue;
+
+      // Parameterise the keyframe duration so epilepsy-safe mode (which
+      // zeroes the animation) still lets the CSS cascade apply cleanly.
+      centreSymbol.style.setProperty('--winner-pop-ms', CFG.WINNER_POP_MS + 'ms');
+      centreSymbol.classList.remove('winning-symbol');
+      void centreSymbol.offsetWidth;
+      centreSymbol.classList.add('winning-symbol');
+
+      setTimeout(() => {
+        if (centreSymbol) centreSymbol.classList.remove('winning-symbol');
+      }, CFG.WINNER_POP_MS + 50);
+    }
+  }
+
+  /**
+   * Sync the floating `#player-rank-badge` with the live Leaderboard rank.
+   *
+   * Iteration 20 — called after each win so the badge reflects rank
+   * changes in real time. The badge is hidden until the player has a
+   * rank (i.e. first win has been recorded); from then on, any rank
+   * improvement fires the `.rank-up` pulse.
+   *
+   * @returns {void}
+   */
+  function _updatePlayerRankBadge() {
+    const badge = $('player-rank-badge');
+    const value = $('player-rank-badge-value');
+    if (!badge || !value || typeof Leaderboard === 'undefined') return;
+
+    const rank = Leaderboard.getPlayerRank();
+    if (rank === null || rank === undefined) {
+      badge.hidden = true;
+      return;
+    }
+
+    // Reveal if hidden; detect improvement for celebratory pulse.
+    const prev = Number(badge.dataset.prevRank) || null;
+    badge.hidden = false;
+    value.textContent = '#' + rank;
+    badge.dataset.prevRank = String(rank);
+
+    // Only pulse on a strict improvement (smaller rank number), not on
+    // first-ever display and not on the repeated "still rank 4" call
+    // that happens after most spins.
+    if (prev !== null && rank < prev
+        && document.body.dataset.epilepsysafe !== 'true') {
+      badge.classList.remove('rank-up');
+      void badge.offsetWidth;
+      badge.classList.add('rank-up');
+      setTimeout(() => badge.classList.remove('rank-up'), 1200);
+    }
   }
 
   /**

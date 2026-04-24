@@ -245,35 +245,33 @@ const UiReels = (() => {
 
           if (t < 1) { rafId = requestAnimationFrame(phase1); return; }
 
-          // Phase 1 complete → enter bounce.
+          // Phase 1 complete — strip is exactly at landingPos.
+          // Phases 2+3 (overshoot + settle) use CSS transitions so the browser
+          // interpolates between keyframes without any per-frame JS snap risk.
           strip.classList.remove('is-decelerating');
           strip.classList.add('is-settling');
-          let p2Start = null;
 
-          // ── Phase 2: overshoot past landingPos ─────────────────────────
-          function phase2(ts2) {
-            if (!p2Start) p2Start = ts2;
-            const t2 = Math.min((ts2 - p2Start) / halfOvershootMs, 1);
-            strip.style.transform =
-              `translateY(-${landingPos + overshootDist * easeInOut(t2)}px)`;
-            if (t2 < 1) { rafId = requestAnimationFrame(phase2); return; }
+          // Force the browser to commit the current transform as the animation
+          // start point before we switch to CSS-driven movement.
+          void strip.offsetHeight;
 
-            // ── Phase 3: settle back to landingPos ─────────────────────
-            const peakPos = landingPos + overshootDist;
-            let p3Start   = null;
-            function phase3(ts3) {
-              if (!p3Start) p3Start = ts3;
-              const t3 = Math.min((ts3 - p3Start) / halfOvershootMs, 1);
-              strip.style.transform =
-                `translateY(-${peakPos - overshootDist * easeInOut(t3)}px)`;
-              if (t3 < 1) { rafId = requestAnimationFrame(phase3); return; }
+          // Phase 2: ease-in overshoot to peakPos.
+          strip.style.transition = `transform ${halfOvershootMs}ms ease-in`;
+          strip.style.transform  = `translateY(-${landingPos + overshootDist}px)`;
+
+          setTimeout(() => {
+            // Phase 3: ease-out settle back to landingPos — no explicit final
+            // snap needed because the CSS end-value IS landingPos.
+            void strip.offsetHeight; // commit peakPos as start of phase 3
+            strip.style.transition = `transform ${halfOvershootMs}ms ease-out`;
+            strip.style.transform  = `translateY(-${landingPos}px)`;
+
+            setTimeout(() => {
+              strip.style.transition = '';  // restore CSS control
               strip.classList.remove('is-settling');
-              strip.style.transform = `translateY(-${landingPos}px)`;
               resolve();
-            }
-            rafId = requestAnimationFrame(phase3);
-          }
-          rafId = requestAnimationFrame(phase2);
+            }, halfOvershootMs);
+          }, halfOvershootMs);
         }
 
         rafId = requestAnimationFrame(phase1);

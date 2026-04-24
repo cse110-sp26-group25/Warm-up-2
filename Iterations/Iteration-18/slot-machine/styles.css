@@ -68,6 +68,10 @@
   /* Power Core dimensions */
   --core-size:   clamp(140px, 30vw, 180px);
 
+  /* Flashy-lights: machine-frame pulse tokens (overridden per-theme) */
+  --frame-shadow-idle: 0 0 40px rgba(229,57,53,0.30), inset 0 0 20px rgba(0,0,0,0.4);
+  --frame-shadow-peak: 0 0 80px rgba(229,57,53,0.65), 0 0 120px rgba(229,57,53,0.25), inset 0 0 20px rgba(0,0,0,0.4);
+
   /*
    * Iteration 17 — Dynamic header height.
    * Initial fallback value matches the default single-row header height.
@@ -402,9 +406,10 @@ body {
   border-radius: 24px;
   padding: 20px;
   width: 100%; max-width: 560px;
-  box-shadow: 0 0 40px rgba(229,57,53,0.30), inset 0 0 20px rgba(0,0,0,0.4);
+  box-shadow: var(--frame-shadow-idle);
   display: flex; flex-direction: column; gap: 16px;
   position: relative;
+  animation: framePulse 2.5s ease-in-out infinite;
 }
 
 /* Win-flash overlay */
@@ -441,6 +446,31 @@ body {
   0%, 100% { background: var(--red);    box-shadow: var(--glow-red); }
   50%      { background: var(--yellow); box-shadow: var(--glow-yell); }
 }
+
+/* Flashy lights: machine-frame glow pulse (Iteration 18) */
+@keyframes framePulse {
+  0%, 100% { box-shadow: var(--frame-shadow-idle); }
+  50%      { box-shadow: var(--frame-shadow-peak); }
+}
+
+/* Flashy lights: idle chaser on the light bulbs (Iteration 18).
+   Suppressed in epilepsy-safe mode. Active and win-lights states override. */
+@keyframes lightChaser {
+  0%, 80%, 100% { background: var(--red-dark); box-shadow: inset 0 -2px 4px rgba(0,0,0,0.4); }
+  20%           { background: var(--red-light); box-shadow: var(--glow-red); }
+  50%           { background: var(--yellow);    box-shadow: var(--glow-yell); }
+}
+.lights-bar .light            { animation: lightChaser 3.2s ease-in-out infinite; }
+.lights-bar .light.l1         { animation-delay: 0s; }
+.lights-bar .light.l2         { animation-delay: 0.4s; }
+.lights-bar .light.l3         { animation-delay: 0.8s; }
+.lights-bar .light.l4         { animation-delay: 1.2s; }
+.lights-bar .light.l5         { animation-delay: 1.6s; }
+.lights-bar .light.l6         { animation-delay: 2.0s; }
+.lights-bar .light.l7         { animation-delay: 2.4s; }
+.lights-bar .light.l8         { animation-delay: 2.8s; }
+/* Pause chaser during spin so static active-state colours show cleanly */
+.lights-bar.active .light     { animation: none; }
 
 /* Jackpot figure */
 .jackpot-display {
@@ -1230,6 +1260,8 @@ body[data-reducedmotion="true"] *::after {
    Two exceptions preserved in epilepsy mode:
      • Win celebration overlay — fades in gently (replaced animation below).
      • Lights-bar "active" state on spin — solid colour, not cycling. */
+body[data-epilepsysafe="true"] .machine-frame,
+body[data-epilepsysafe="true"] .lights-bar .light,
 body[data-epilepsysafe="true"] .win-flash-overlay,
 body[data-epilepsysafe="true"] .lights-bar.win-lights .light,
 body[data-epilepsysafe="true"] .power-core-glow,
@@ -1255,6 +1287,11 @@ body[data-epilepsysafe="true"] .power-core.is-spinning .ring-middle {
   transition-duration: 0.001ms !important;
 }
 
+/* Restore static machine-frame shadow when animation is off. */
+body[data-epilepsysafe="true"] .machine-frame {
+  box-shadow: var(--frame-shadow-idle);
+}
+
 /* Win celebration: replace aggressive scale-pop with a gentle fade in epilepsy mode. */
 @keyframes winFadeInSafe {
   from { opacity: 0; }
@@ -1263,6 +1300,60 @@ body[data-epilepsysafe="true"] .power-core.is-spinning .ring-middle {
 body[data-epilepsysafe="true"] .win-amount-display,
 body[data-epilepsysafe="true"] .win-label-display {
   animation: winFadeInSafe 0.45s ease forwards !important;
+}
+
+/* ---------- Theme select styling ---------------------------------------- */
+.settings-group select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  margin-left: auto;
+  accent-color: var(--red);
+}
+.settings-group select:focus { border-color: var(--red); }
+
+/* =========================================================================
+   LIZARD HOPPER THEME (Iteration 18)
+   Swaps the robot colour palette for a nature / swamp palette.
+   All CSS custom-property overrides here; no structural changes.
+   ========================================================================= */
+body.theme-lizard-hopper {
+  /* Primary accent: forest green replaces red */
+  --red:         #2e7d32;
+  --red-dark:    #1b5e20;
+  --red-light:   #81c784;
+  /* Secondary accent: amber replaces yellow */
+  --yellow:      #ffca28;
+  --yellow-sat:  #f57f17;
+  /* Tertiary accent: lime replaces teal-green */
+  --green:       #c5e1a5;
+  --green-dark:  #8bc34a;
+
+  /* Dark forest backgrounds */
+  --bg:          #0d1f0d;
+  --bg2:         #0a1c0a;
+  --bg3:         #071407;
+  --surface:     #1a3d1a;
+  --surface2:    #224422;
+  --border:      rgba(46,125,50,0.35);
+  --text:        #e8f5e9;
+  --text-dim:    #a5d6a7;
+
+  /* Glow overrides */
+  --glow-red:    0 0 12px rgba(46,125,50,0.70);
+  --glow-green:  0 0 12px rgba(197,225,165,0.70);
+  --glow-yell:   0 0 12px rgba(255,202,40,0.70);
+  --glow-power:  0 0 18px rgba(129,199,132,0.60), 0 0 36px rgba(46,125,50,0.45);
+
+  /* Frame-pulse shadow tokens */
+  --frame-shadow-idle: 0 0 40px rgba(46,125,50,0.30), inset 0 0 20px rgba(0,0,0,0.4);
+  --frame-shadow-peak: 0 0 80px rgba(46,125,50,0.65), 0 0 120px rgba(46,125,50,0.25), inset 0 0 20px rgba(0,0,0,0.4);
 }
 
 /* ---------- Scrollbar --------------------------------------------------- */

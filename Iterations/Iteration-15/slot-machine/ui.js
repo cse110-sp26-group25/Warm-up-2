@@ -1,5 +1,5 @@
 /**
- * ui.js — UI orchestration layer (Iteration 14).
+ * ui.js — UI orchestration layer (Iteration 16).
  *
  * Top-level coordinator that wires together every sub-module (UiReels,
  * UiMascot, UiPanels) and drives the core spin cycle, win celebrations,
@@ -9,18 +9,20 @@
  *   • uiMascot.js  — robot mascot interactions, chat, idle quips.
  *   • uiPanels.js  — slide-over panels, settings, leaderboard, achievements.
  *
- * Iteration 14 — what changed in this file:
- *   • The balance guard has moved INTO `GameLogic.spin()`. This module no
- *     longer reads the balance before calling `spin`; it branches on the
- *     returned rejection object and surfaces a denied-sound + quip.
+ * Iteration 16 — what changed in this file:
+ *   • `_updateLuckIndicator()` refactored for the new dull-grey →
+ *     glowing-neon-orange luck-node scheme. Within 2 spins of the pity
+ *     threshold, active nodes gain a `.lk-pulse-fast` class that drives
+ *     a non-linear anticipatory pulse (CSS-defined).
+ *   • `_showStorageWarning()` now applies the CSS `.static` class after
+ *     10 s instead of killing the animation cold — the transition is
+ *     smoother and the badge can be fully styled via CSS.
+ *
+ * Iteration 14 retained:
+ *   • Balance guard lives inside `GameLogic.spin()`; this module branches
+ *     on the returned rejection object and surfaces a denied-sound + quip.
  *   • Achievement toasts drop from the top-center over the machine frame.
- *     The slide-out animation matches the new drop direction.
- *   • An `#storage-warning` badge appears in the header when private-mode
- *     storage is blocked; the boot greeting is swapped for the memory-
- *     error greeting specified in the Iteration 14 plan.
- *   • The balance display is kept in sync via `canSpin(bet)` for disabled
- *     state — the UI-layer check is now a disablement optimisation only,
- *     not a security boundary.
+ *   • `#storage-warning` header badge for private/incognito mode.
  */
 (function () {
   'use strict';
@@ -56,6 +58,11 @@
     TOAST_VISIBLE_MS:   3000,
     /** Toast slide-out animation duration — must match CSS (ms). */
     TOAST_SLIDE_OUT_MS: 300,
+    /**
+     * How long the `#storage-warning` header badge pulses before
+     * transitioning to its static state (Iteration 16 mandate).
+     */
+    STORAGE_WARN_PULSE_MS: 10_000,
   });
 
   /**
@@ -575,27 +582,44 @@
   /**
    * Sync the five luck-node dots to the current pity meter.
    *
-   * Intentional design choices vs the old explicit pity bar:
-   *   • No numeric label — players see "machine warming up" not "X/20 to free win".
-   *   • Square-root compression of the raw fraction so early progress is visually
-   *     apparent, but the indicator plateaus in the upper range, making it harder
-   *     to predict the exact trigger point.
-   *   • Three qualitative colour bands (cool → warm → hot) replace precise fill %.
+   * Iteration 16 — colour and motion refactor:
+   *   • Single `.lk-active` class now drives the dull-grey → glowing-
+   *     neon-orange transition (CSS handles the colour math).
+   *   • When within `PULSE_FAST_WINDOW` spins of the pity threshold,
+   *     active nodes also get `.lk-pulse-fast` for a non-linear
+   *     anticipatory pulse — felt, not read.
+   *   • Square-root compression of the raw fraction is retained so
+   *     early progress reads clearly and the indicator plateaus in the
+   *     upper range, keeping the exact trigger point unpredictable.
+   *
+   * No numeric label — players see "machine warming up", not "X/20 to
+   * free win". The pity threshold remains private.
    * @returns {void}
    */
   function _updateLuckIndicator() {
     const nodes = document.querySelectorAll('.luck-node');
     if (!nodes.length) return;
-    const raw  = Math.min(GameLogic.pityMeter / GameLogic.CONFIG.PITY_THRESHOLD, 1);
+
+    const threshold = GameLogic.CONFIG.PITY_THRESHOLD;
+    const meter     = GameLogic.pityMeter;
+    const raw       = Math.min(meter / threshold, 1);
+
     // Square-root compression: early progress reads clearly; late progress converges.
-    const vis  = Math.sqrt(raw);
+    const vis         = Math.sqrt(raw);
     const activeCount = Math.round(vis * nodes.length);
+
+    // Within this many spins of the threshold, active nodes pulse fast.
+    const PULSE_FAST_WINDOW = 2;
+    const shouldPulse = (threshold - meter) <= PULSE_FAST_WINDOW && meter < threshold;
+
     nodes.forEach((node, i) => {
-      node.classList.remove('lk-cool', 'lk-warm', 'lk-hot');
+      // Iteration 16: strip legacy 3-band classes first so an old
+      // persisted DOM state doesn't bleed into the new scheme.
+      node.classList.remove('lk-cool', 'lk-warm', 'lk-hot',
+                            'lk-active', 'lk-pulse-fast');
       if (i < activeCount) {
-        if (raw < 0.40)      node.classList.add('lk-cool');
-        else if (raw < 0.75) node.classList.add('lk-warm');
-        else                 node.classList.add('lk-hot');
+        node.classList.add('lk-active');
+        if (shouldPulse) node.classList.add('lk-pulse-fast');
       }
     });
   }
@@ -645,8 +669,14 @@
 
   /**
    * Surface the header "memory error" badge if localStorage is unavailable.
-   * Stops the pulse animation after 10 s so it doesn't compete indefinitely
-   * with the jackpot and antenna pulses for visual attention.
+   *
+   * Iteration 16 — uses a CSS `.static` class after 10 s instead of
+   * killing the animation cold via inline style. The static class
+   * defines a lower-intensity non-animated state with a smooth 0.6 s
+   * fade-out, so the handover from pulsing to stable is gentle. The
+   * badge remains visible (so the player doesn't forget their session
+   * is ephemeral) but stops competing with the jackpot and antenna
+   * pulses for attention.
    * @returns {void}
    */
   function _showStorageWarning() {
@@ -654,8 +684,8 @@
     storageWarning.hidden = false;
     storageWarning.setAttribute('aria-hidden', 'false');
     setTimeout(() => {
-      if (storageWarning) storageWarning.style.animation = 'none';
-    }, 10000);
+      if (storageWarning) storageWarning.classList.add('static');
+    }, CFG.STORAGE_WARN_PULSE_MS);
   }
 
   setTimeout(() => {

@@ -78,8 +78,8 @@ const GameLogic = (() => {
   const REELS = Array.from({ length: CONFIG.REEL_COUNT }, _buildReel);
 
   // ── Persistent state mirrors ───────────────────────────────────────
-  /** @type {number} */
-  let _spinCount     = /** @type {number} */ (State.get('spinCount'))     || 0;
+  // _spinCount removed — spin count is now read exclusively from
+  // State.playerStats.spins (maintained by achievements.js).
   /** @type {number} */
   let _totalWinnings = /** @type {number} */ (State.get('totalWinnings')) || 0;
   /** @type {number} */
@@ -93,14 +93,15 @@ const GameLogic = (() => {
     REELS,
     REEL_SIZE:  CONFIG.REEL_SIZE,
     REEL_COUNT: CONFIG.REEL_COUNT,
+    PAYOUTS:    CONFIG.PAYOUTS,
     CONFIG,
 
     /** @returns {number} Current jackpot value. */
     get jackpot()       { return _jackpot; },
     /** @returns {number} Cumulative lifetime winnings. */
     get totalWinnings() { return _totalWinnings; },
-    /** @returns {number} Total spins across all sessions. */
-    get spinCount()     { return _spinCount; },
+    /** @returns {number} Total spins across all sessions (read from playerStats). */
+    get spinCount()     { return State.get('playerStats.spins') || 0; },
     /** @returns {number} Current pity meter value. */
     get pityMeter()     { return _pityMeter; },
 
@@ -125,9 +126,6 @@ const GameLogic = (() => {
      * }} Spin result.
      */
     spin(bet) {
-      _spinCount += 1;
-      State.set('spinCount', _spinCount);
-
       // Grow the jackpot pool.
       _jackpot += bet * CONFIG.JACKPOT_FRACTION;
 
@@ -199,6 +197,7 @@ const GameLogic = (() => {
         return { payout: +(bet * mult).toFixed(2), type: 'five', nearMiss: false };
       }
       if (matchCount === 4) {
+        if (anchor === 'jackpot') return { payout: 0, type: 'jackpot', nearMiss: false };
         const mult = CONFIG.PAYOUTS.FOUR[anchor] || 0;
         if (mult) return { payout: +(bet * mult).toFixed(2), type: 'four', nearMiss: false };
       }

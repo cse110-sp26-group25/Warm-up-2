@@ -180,6 +180,7 @@
     if (spinUnlocked.length) _showAchievementUnlock(spinUnlocked[0]);
 
     _updateJackpot();
+    _updatePityBar();
     UiPanels.updateStats();
     UiPanels.updateAchievements();
     UiPanels.refreshLeaderboard();
@@ -422,6 +423,26 @@
   }
   setInterval(_updateJackpot, CFG.JACKPOT_POLL_MS);
   _updateJackpot();
+
+  // ── Pity bar ───────────────────────────────────────────────────────
+  /**
+   * Sync the pity progress bar to the current pity meter value.
+   * Color shifts dim → yellow → red as the meter fills toward threshold.
+   * @returns {void}
+   */
+  function _updatePityBar() {
+    const fill = $('pity-bar-fill');
+    if (!fill) return;
+    const frac = Math.min(
+      GameLogic.pityMeter / GameLogic.CONFIG.PITY_THRESHOLD, 1
+    );
+    fill.style.width = (frac * 100) + '%';
+    fill.style.backgroundColor =
+      frac < 0.35  ? 'rgba(105,240,174,0.35)'   // dim green
+      : frac < 0.70 ? 'var(--yellow-sat)'        // yellow
+                    : 'var(--red)';              // red
+  }
+  _updatePityBar();
 
   // Hydrate winnings on boot.
   if (winningsAmount) {

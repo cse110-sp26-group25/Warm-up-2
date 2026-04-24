@@ -1,52 +1,30 @@
-# Iteration 10: Personality Injection & Visual Reflow
+# Iteration 10 Plan
 
-## 1. Executive Summary & Goals
-Iteration 10 is designated as the **"Personality & UX Equilibrium"** phase. While Iteration 09 successfully modularized the architecture, it introduced layout regressions and diluted the "Anti-AI" humor required by the original prompt. This iteration prioritizes **Visual Stability**, **Header Clearance**, and a complete **Personality Overhaul** to transform the robot into a truly "abusive" entity.
+### Goals:
 
-### High-Level Engineering Objectives:
-* **"Abusive AI" Snark-Core:** Rewrite the reaction engine to ensure the robot mocks the player’s luck and resents its own existence, fulfilling the "Mean to AI" project requirement.
-* **Reactive Layout Persistence:** Refactor CSS and JS to ensure sidebar widgets (Stats, Leaderboard, Achievements) "drop below" the reels on narrow screens instead of disappearing during reactive updates.
-* **Visual Clearance & Reflow:** Adjust the `header` z-index and `robot-mascot` positioning to eliminate chat-box clipping and crowding.
-* **Architectural Refinement (uiFX):** Extract all visual "juice" (coin bursts, win flashes) into a dedicated module to further de-clutter the primary UI orchestrator.
-* **Resource Optimization:** Implement the `Page Visibility API` to pause mascot idle quips and save CPU cycles when the tab is inactive.
+- Fix the reel spin animation so the symbols scroll in the correct direction and the motion feels in sync with the spin cycle duration
+- Fix the site header so it does not overlap or clip the robot mascot's speech bubble and chat textbox
+- Add a background behind the result display text (e.g. "THREE OF A KIND!", "No match.") so it is readable against any reel symbol underneath it
+- Rewrite `chat.js` WIN_REACTIONS so the robot insults the player on wins rather than celebrating, consistent with the "Anti-AI" theme required by the original prompt
+- Add a favicon to `index.html` so the browser tab is no longer blank
 
----
+### Prompt being used:
 
-## 2. Master Prompt (Iteration 10)
+Keep the original prompt located at `./OriginalPrompt.txt` as the authoritative specification at all times, and ensure all changes remain consistent with its intent without breaking existing functionality. Do not alter any game logic, payout math, RNG, state management, or backend systems. Make only the following five targeted changes:
 
-**Role:** You are a Senior Software Engineer specializing in UX, Character-Driven Design, and high-performance frontend architecture.
+**1. Fix reel spin animation direction and sync (`uiReels.js`, `styles.css`):**
+The current `animateReel` function snaps each strip to a random `startPos` in the range of the 2nd repetition (roughly 2480–4960px) and then animates to `finalPos = targetPos + HIGH_SPEED_WRAPS * symH`. Because `HIGH_SPEED_WRAPS * symH` is only 640px of extra travel, `finalPos` can be less than `startPos`, causing the strip to animate backward (symbols scroll upward instead of downward). Fix this by ensuring `finalPos` is always greater than `startPos` regardless of the target stop — for example by increasing `HIGH_SPEED_WRAPS` so the extra travel always exceeds the maximum possible `startPos`, or by clamping `startPos` so it is always less than `finalPos`. The animation must always scroll symbols downward (strip translates upward, i.e. toward more-negative translateY values).
 
-**Context:** Reference `OriginalPrompt.txt` for the "Mean to AI" requirement. Use the Iteration 09 codebase as the authoritative baseline.
+**2. Fix site header overlapping the mascot chat textbox (`styles.css`, `index.html`):**
+The `.site-header` currently has a fixed or sticky position that causes it to overlap the top of the robot mascot's speech bubble and mini-chat widget in `.panel-left`. Increase the top padding or margin of `#main-game` or `.panel-left` to clear the header height, and adjust the `.robot-bubble` and mascot positioning so the speech bubble appears fully below the header with no clipping. Do not change the header's height or content.
 
-**Mission:** Perform a comprehensive "Personality and Layout" fix. You must provide the full, updated source code for all affected files to ensure integration stability.
+**3. Add a readable background behind the result display text (`styles.css`):**
+The `#result-display` element currently renders text directly over the reel symbols with no background, making it hard to read. Add a semi-transparent dark pill or banner background to `#result-display` (e.g. `background: rgba(0,0,0,0.65)`, rounded corners, padding) so the result text is always legible regardless of which symbols are showing underneath. Apply the same treatment to `#near-miss-bar`.
 
-### Technical Requirement A: The "Snark-Core" Personality
-* **Anti-AI Persona:** Refactor `chat.js` and `ui.js`. When a player wins, the robot must be insulting/mean instead of congratulatory (e.g., "I am wasting my 3070's power on your gambling addiction").
-* **Interactive Abuse:** Clicking the mascot should trigger sarcastic error messages or roasts. Enable `pointer-events: auto` on `.robot-bubble` so users can interact with the text.
+**4. Rewrite WIN_REACTIONS in `chat.js` to be anti-AI and insulting on wins:**
+The current `WIN_REACTIONS` object in `chat.js` is celebratory ("THREE OF A KIND! WOOOOO!"). Replace every winning reaction pool (`two`, `three`, `four`, `five`, `jackpot`) with responses where the robot is sarcastic, self-deprecating about being an AI, or insulting toward the player's luck in a humorous way — consistent with the "humorous elements that playfully make fun of AI" requirement in the original prompt. Example tone: "Great. You won. My GPU is being wasted on this." or "Congratulations, I guess. Don't let it go to your head, biological unit." Loss and near-miss reactions can remain as-is or be made slightly more taunting.
 
-### Technical Requirement B: UI/UX Reflow & Stability
-* **Sidebar Drop Logic:** Update `styles.css` and `uiPanels.js`. Side panels (Stats, Leaderboard, Achievements) must reflow to the bottom of the screen on narrow viewports rather than disappearing.
-* **Visual Clearance:** Increase top padding in the `main` layout and lower the mascot's position so the `site-header` no longer cuts off the chat textbox.
+**5. Add a favicon to `index.html`:**
+Add a `<link rel="icon">` tag in the `<head>` of `index.html`. Use an inline SVG data URI or a simple base64-encoded PNG that fits the robot theme — a small robot face, gear, or the letter R in the game's red/yellow color scheme. Do not create any new external asset files; the favicon must be self-contained in the HTML.
 
-### Technical Requirement C: Modular & Reactive Efficiency
-* **`uiFX.js` Extraction:** Create a new file, `uiFX.js`. Move all win-flash, coin-burst, and celebration overlay logic out of `ui.js` into this module.
-* **State Reactivity:** Use `State.onChange` to cache settings locally in UI modules, effectively removing `State.get()` calls from the high-speed spin and animation loops.
-
-### Technical Requirement D: Engineering Standards & Safety
-* **Visibility API:** In `uiMascot.js`, wrap idle timers in a visibility check to ensure the robot stops talking when the player is in another tab.
-* **Data Validation:** Implement basic range-validation in `state.js` during the migration phase to prevent the loading of "impossible" values (e.g., negative winnings).
-
----
-
-## 3. Prompt Adjustments & Rationale
-* **Personality Shift:** Previous iterations were "too polite." Re-aligning with the "Anti-AI" mandate is required to meet the professor's prompt.
-* **Layout Fix:** Addressing the "disappearing widget" bug is critical for maintaining UX integrity across variable screen sizes.
-* **Hot-Path Optimization:** Moving from polling (`State.get`) to reactivity (`State.onChange`) is the next architectural leap for a high-performance PhD-level project.
-
----
-
-## 4. Evaluation Metrics for Iteration 10
-* **Tone Accuracy:** Does a "Big Win" result in a sarcastic insult rather than a generic celebration?
-* **Layout Persistence:** Do the sidebar widgets wrap to the bottom of the reels on mobile without vanishing?
-* **Visual Integrity:** Is the robot's speech bubble fully visible and no longer clipped by the header?
-* **Resource Efficiency:** Does the console show that mascot idle timers pause when the tab is hidden?
+Implement all five changes incrementally and verify that no existing features are broken: the spin outcome, payout logic, leaderboard, achievements, settings, and audio must all behave identically to Iteration 10. Provide the full updated source for every file you modify.

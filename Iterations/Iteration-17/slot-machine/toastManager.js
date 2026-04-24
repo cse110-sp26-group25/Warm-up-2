@@ -1,5 +1,5 @@
 /**
- * toastManager.js — Priority-based toast notification system (Iteration 17).
+ * toastManager.js — Priority-based toast notification system (Iteration 18).
  *
  * Replaces the previous FIFO-capped implementation in ui.js with a fully
  * queued, priority-aware system. Key properties:
@@ -9,12 +9,17 @@
  *   • Four priority tiers: JACKPOT (4) > BIG_WIN (3) > BONUS (2) > ACHIEVEMENT (1).
  *   • If all slots are full and an incoming toast has higher priority than
  *     the lowest currently visible toast, the lowest-priority slot is
- *     preempted — the displaced toast is pushed back into the queue so it
- *     will appear once space opens.
+ *     preempted — the displaced toast is pushed back into the queue with its
+ *     remaining display time preserved so it re-appears for the same total
+ *     duration it was originally granted (Iteration 18).
  *   • When any toast expires, the queue is drained in priority order.
  *   • Notification flood protection via configurable batching windows:
- *     identical-key toasts that arrive within the window are coalesced into
- *     a single "Nx message" toast. JACKPOT notifications bypass batching.
+ *     the first achievement toast is shown immediately; any additional
+ *     identical-key toasts that arrive within the batch window are coalesced
+ *     into a single follow-up "Nx message" toast (Iteration 18).
+ *     JACKPOT notifications bypass batching entirely.
+ *   • JACKPOT toasts use role="alert" for immediate screen-reader
+ *     announcement; all other toasts use role="status" (Iteration 18).
  *
  * Usage:
  *   ToastManager.init(document.getElementById('toast-container'), {
@@ -111,7 +116,22 @@ const ToastManager = (() => {
   /**
    * Physically create and mount a toast element for one pending item.
    * Adds the entry to `_active` and schedules its expiry.
-   * @param {{message:string, priority:number, key:string|null, rawIcon:string}} item
+   *
+   * Iteration 18 changes:
+   *   • JACKPOT toasts use role="alert" (assertive, interrupts screen readers
+   *     immediately) instead of role="status" (polite).
+   *   • item.remainingMs, when present, overrides _visibleMs so that toasts
+   *     re-queued after preemption finish the time they were originally shown.
+   *   • shownAt records when the toast became visible, enabling remaining-time
+   *     calculation if it is later preempted.
+   *
+   * @param {{
+   *   message:      string,
+   *   priority:     number,
+   *   key:          string|null,
+   *   rawIcon:      string,
+   *   remainingMs?: number
+   * }} item
    */
   function _displayToast(item) {
     if (!_container) return;
@@ -119,7 +139,9 @@ const ToastManager = (() => {
     const toast = document.createElement('div');
     // Base class + per-priority variant for optional CSS styling
     toast.className = `toast toast-p${item.priority}`;
-    toast.setAttribute('role', 'status');
+    // Iteration 18: JACKPOT uses role="alert" so screen readers interrupt
+    // the current reading and announce the jackpot win immediately.
+    toast.setAttribute('role', item.priority >= PRIORITY.JACKPOT ? 'alert' : 'status');
     toast.setAttribute('data-priority', String(item.priority));
     toast.setAttribute('data-key', item.key || '');
 
@@ -130,7 +152,10 @@ const ToastManager = (() => {
 
     _container.appendChild(toast);
 
-    const expireTimer = setTimeout(() => _expireToast(toast), _visibleMs);
+    // Iteration 18: honour a preserved remaining time when re-displaying a
+    // preempted toast; otherwise use the default full-duration.
+    const duration = (item.remainingMs != null) ? item.remainingMs : _visibleMs;
+    const expireTimer = setTimeout(() => _expireToast(toast), duration);
 
     _active.push({
       element:     toast,
@@ -138,6 +163,7 @@ const ToastManager = (() => {
       key:         item.key,
       message:     item.message,
       rawIcon:     item.rawIcon,
+      shownAt:     Date.now(),   // Iteration 18: used to compute remaining time on preemption
       expireTimer,
     });
   }
@@ -203,11 +229,19 @@ const ToastManager = (() => {
       clearTimeout(lowest.expireTimer);
       _active.splice(lowestIdx, 1);
 
+      // Iteration 18: preserve the remaining display time so the displaced
+      // toast doesn't start over from _visibleMs when it re-appears.
+      // Minimum 500 ms so the player has time to read it even if it was
+      // preempted almost immediately.
+      const elapsed     = Date.now() - lowest.shownAt;
+      const remainingMs = Math.max(_visibleMs - elapsed, 500);
+
       _queue.push({
-        message:  lowest.message,
-        priority: lowest.priority,
-        key:      lowest.key,
-        rawIcon:  lowest.rawIcon,
+        message:     lowest.message,
+        priority:    lowest.priority,
+        key:         lowest.key,
+        rawIcon:     lowest.rawIcon,
+        remainingMs,
       });
 
       // Animate the displaced element out without triggering _drainQueue
@@ -230,9 +264,12 @@ const ToastManager = (() => {
 
   /**
    * Handle the batching window for a given key.
-   * On first call: opens a batch window (schedules flush).
-   * On subsequent calls within the window: increments count, resets timer.
-   * JACKPOT priority (4) always bypasses this path.
+   *
+   * Iteration 18: first call enqueues the item immediately, then opens a
+   * batch window (count=0) to collect follow-ups. Subsequent calls within
+   * the window increment count and reset the timer. JACKPOT (priority 4)
+   * always bypasses this path.
+   *
    * @param {{message:string, priority:number, key:string, rawIcon:string}} item
    */
   function _batchOrShow(item) {
@@ -245,12 +282,15 @@ const ToastManager = (() => {
       clearTimeout(existing.timer);
       existing.timer = setTimeout(() => _flushBatch(item.key), _batchWindowMs);
     } else {
-      // First notification for this key — open a new batch window.
-      // We intentionally delay even the first toast until the window
-      // expires so a rapid cascade is always shown as a single summary.
+      // Iteration 18: show the first notification immediately rather than
+      // waiting for the batch window to expire.
+      _enqueue(item);
+
+      // Open a window to catch any follow-up notifications.
+      // count starts at 0 because the first was already displayed above.
       const timer = setTimeout(() => _flushBatch(item.key), _batchWindowMs);
       _batches.set(item.key, {
-        count:    1,
+        count:    0,
         message:  item.message,
         priority: item.priority,
         rawIcon:  item.rawIcon,
@@ -260,8 +300,8 @@ const ToastManager = (() => {
   }
 
   /**
-   * Flush a completed batch: convert accumulated count to a display item
-   * and send it through the normal enqueue path.
+   * Flush a completed batch: if additional notifications arrived after the
+   * first, emit a summary toast through the normal enqueue path.
    * @param {string} key
    */
   function _flushBatch(key) {
@@ -269,8 +309,12 @@ const ToastManager = (() => {
     if (!batch) return;
     _batches.delete(key);
 
-    // Build the display message. Count=1 shows normal single message;
-    // count>1 shows the condensed "Nx ..." summary.
+    // Iteration 18: count=0 means only the first notification arrived and it
+    // was already shown immediately — nothing more to display.
+    if (batch.count === 0) return;
+
+    // count=1 → show the additional notification as a normal message.
+    // count>1 → condense into "Nx ..." summary.
     const finalMessage = batch.count > 1
       ? `${batch.count}\u00d7 ${batch.message}`  // "3× UNLOCKED: Boot Up"
       : batch.message;

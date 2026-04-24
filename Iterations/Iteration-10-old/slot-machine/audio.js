@@ -14,15 +14,6 @@
  *
  * The AudioContext is created lazily and must be unlocked via a user
  * gesture (browser policy) — `Audio.unlock()` is called on first click.
- *
- * Iteration 16 — no functional changes. The 50 ms silent lead-in in
- * `_playDenied()` (the Iteration 14 mobile-audio warmup fix) is retained
- * as-is; it remains the authoritative implementation. Header restamped
- * only for iteration continuity.
- *
- * Iteration 14 — added `playDenied()` with a 50 ms silent lead-in that
- * schedules all samples after the AudioContext finishes resuming, so the
- * first buffer frame isn't dropped on mobile Safari / Chrome.
  */
 const Audio = (() => {
 
@@ -220,42 +211,6 @@ const Audio = (() => {
     [440, 554, 659, 880].forEach((f, i) => _tone(f, 'triangle', 0.3, 0.25, _sfxGain, i * 0.09));
   }
 
-  /**
-   * Mechanical "denied" buzz — harsh square-wave pulse with a
-   * low-frequency noise thud. Used when a spin is rejected (e.g. for
-   * insufficient balance). Distinct from the loss sting so players
-   * can tell "you lost" from "the machine refused you".
-   *
-   * The 50 ms silent lead-in (`LEAD = 0.05`) schedules all samples after
-   * the AudioContext finishes resuming. On mobile Safari and Chrome the
-   * context takes one event-loop tick to wake from 'suspended'; without
-   * the lead-in, the very first buffer frame is often dropped entirely,
-   * resulting in a noticeably clipped or silent effect.
-   * @returns {void}
-   */
-  function _playDenied() {
-    if (!_sfxEnabled) return;
-    const ctx  = _getCtx();
-    const LEAD = 0.05; // 50 ms silent lead-in — ensures context wake before first sample
-    // Two harsh descending square pulses, offset by the lead-in.
-    _tone(180, 'square', 0.12, 0.25, _sfxGain, LEAD);
-    _tone(140, 'square', 0.14, 0.25, _sfxGain, LEAD + 0.12);
-    // Noise burst also starts after the lead-in so the whole effect coheres.
-    const bufSize = Math.floor(ctx.sampleRate * 0.18);
-    const buf  = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.08;
-    const src    = ctx.createBufferSource();
-    src.buffer   = buf;
-    const filter = ctx.createBiquadFilter();
-    filter.type            = 'bandpass';
-    filter.frequency.value = CONFIG.NOISE_FILTER_HZ;
-    filter.Q.value         = CONFIG.NOISE_FILTER_Q;
-    src.connect(filter); filter.connect(_sfxGain);
-    src.start(ctx.currentTime + LEAD);
-    src.stop(ctx.currentTime  + LEAD + 0.18);
-  }
-
   // ── Background music: simple robotic arpeggio loop ──────────────
 
   /** Note set (C-minor pentatonic-ish). */
@@ -307,7 +262,6 @@ const Audio = (() => {
     /** @returns {void} */ playClick()       { _playClick(); },
     /** @returns {void} */ playAchievement() { _playAchievement(); },
     /** @returns {void} */ playWelcome()     { _playWelcome(); },
-    /** @returns {void} */ playDenied()      { _playDenied(); },
 
     /**
      * Enable or disable sound effects.
