@@ -22,7 +22,6 @@
 - How much does it leave out?
 - Did it change any previous features that it wasn't prompted to?
   - If so, did it not work as intended?
-  - Did these changed deviate from our 
 - How readable is the code?
 - How long did it take?
 - How many tokens did it cost?
@@ -92,7 +91,7 @@ Thank you for your input
 | Iteration 17     | As seen from the review given, it looks like Claude was able to provide the necessary changes the prompt asked for. |
 | Iteration 18     | While the prompt given was one of our shortest, Claude wasn't able to deliver 1/2 of the tasks in the prompt. On the issue Claude was able to implement, it seemed like it was able to implement it well, but overall, Claude was kind of unsuccessful. |
 | Iteration 19     | The prompt was short and concise enough for Claude to interpret and implement, there were some hiccups in some parts of the tasks given, but all in all, it was successful. |
-| Iteration 20 | |
+| Iteration 20 | With the amount of specifics added into the prompt, Claude was able to utilize this and effectivly made most of the changes outlined by the prompt, aside from messing up part of the prompt. Overall: Successful |
 
 
 
@@ -103,6 +102,8 @@ Thank you for your input
 Answer the "what we tracked" questions and any other intresting observations
 -->
 
+Overall, I would have to say that Claude did an okay-ish job on following the prompts provided to it. From this observation, we also learned that Claude responds way better to more direct and concise prompts that detail exacly what part of the code to change. Along with this, longer prompts given to Claude tend to a) take longer (though there are many other variables to play in the length) and b) not follow every direction in the prompt. Even after 20 iterations, Claude still wasn't able to create a working 3x5 slot machine based on our prompts. As detailed in the review, the code was readable and understandable the more iterations we have gone through. In our earlier stages, the code was pretty messy, especially in our html file, but we started prompting Claude to specifically separate parts of the code into its own folder. 
+
 
 
 ## Conclusion
@@ -110,3 +111,7 @@ Answer the "what we tracked" questions and any other intresting observations
 <!--
 Answer the "what we aimed to answer" questions
 -->
+
+When dealing with AI (Claude in our case), you should expect some things to not work as detailed in the prompt, and if they do work, expect to look over the code to make sure it actually fits what you're looking for. Even with the amount of reasearch done to try and get as close to perfection, AI is never going to guarantee that perfection. It is also up to the software engineers to do proper research into their project and what it entails to. From our experience, understanding how slot machines work mechanically, socially, psychologically, mathematically, and legally helped us understand what the user might expect from it, how we can hook the user in, gives us bounds on what we are allowed to do, and helps the slot machine actually be profitable. The research we did helped us understand how a user is going to react to certain things in our project, and thanks to that, we were able to know how to accomadate for them.  
+
+This warm up was a huge wake up call to the entire team in regards on how we operate, mainly on how we organized and communicated with one another. The biggest thing we learned was starting early and not the day before it's due. It also revealed vulnerabilites with our means of communication, like how certain messages won't be pinged, resulting in many of our group to not see an important message. Our organization should hopefully be fixed as we fix our communication with each other, given that the result of our disorganization was caused by our lack of communication to one another. Not only that, this warm up helped us realize the role AI (Claude) is going to play in our project going forward. We do intend to use Claude for the project, but carefully. As we use Claude we still plan on implementing the practices done in this Warm Up (ex. writing a plan for the prompt and reviewing what Claude did well and what it didn't do well), keeping a much closer eye on what Claude decides to add and change.
