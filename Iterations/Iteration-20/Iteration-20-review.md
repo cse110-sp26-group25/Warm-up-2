@@ -1,4 +1,4 @@
-# Iteration 21 Review
+# Iteration 20 Review
 
 ## Query Data
 
@@ -14,7 +14,7 @@
 | Category | Value / Description |
 | :--- | :--- |
 | **Number of files** | 19 (18 code files + 1 log entry) |
-| **Number of folders** | 1 (`Iterations/Iteration-21/slot-machine/`) |
+| **Number of folders** | 1 (`Iterations/Iteration-20/slot-machine/`) |
 | **Lines of code** | 9,233 total across the bundle; ~650 net lines added across 8 touched files (state.js stipend + chat.js greetings + uiMascot.js rank evolution + long-press diagnostic + ui.js tease wiring + uiReels.js tease durations + audio.js tension ramp + gameLogic.js DEBUG_MODE + CSS) |
 
 ## Observations
