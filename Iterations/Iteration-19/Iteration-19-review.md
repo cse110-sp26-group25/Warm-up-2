@@ -4,10 +4,10 @@
 
 | Category | Value / Description |
 | :--- | :--- |
-| **Input tokens** | 4,285 |
-| **Output tokens** | 1,120 |
-| **Total tokens** | 5,405 |
-| **Query time** | 18.4s |
+| **Input tokens** | |
+| **Output tokens** |  |
+| **Total tokens** |  |
+| **Query time** |  |
 
 ## Iteration Information
 
