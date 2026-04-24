@@ -1,4 +1,4 @@
-# Iteration 19 Plan
+# Iteration 18 Plan
 
 ### Goals:
 - Shorten the prompt to make it easier fo the AI to follow and target specific things that is still missing after the first iterations and the iterations are starting to look too much alike without much improvement.
