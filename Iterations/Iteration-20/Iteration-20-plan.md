@@ -1,4 +1,4 @@
-# Iteration 21 Plan: The "Gold Master" Deployment
+# Iteration 20 Plan: The "Gold Master" Deployment
 
 ### Goals
 * **Sequential Logic Correction**: Refactor the resolution engine to enforce the "Left-to-Right" rule, ensuring wins only count consecutive matches starting from Reel 1.
