@@ -7,7 +7,7 @@
 | Pranav Ganesan | [Personal Research](/plan/raw-research/personal%20research/pGanesanResearch.md) |
 | Sahana Rangaraj | [Personal Research](/plan/raw-research/personal%20research/sRangarajResearch.md)  |
 | Quinton Fu | [Personal Research](/plan/raw-research/personal%20research/QuintonFuResearch.md) |
-| Wayne Su | Absent |
+| Wayne Su | [Personal Research](/plan/raw-research/personal%20research/waynesu-research.md) |
 | Kabyan Pathak | [Personal Research](/plan/raw-research/personal%20research/KabyanPathakResearch.MD) |
 | Chan Han | [Personal Research](/plan/raw-research/personal%20research/ChanHanResearch.md) |
 | John Hermosura | [Personal Research](/plan/raw-research/personal%20research/jHermosuraResearch.md) |
