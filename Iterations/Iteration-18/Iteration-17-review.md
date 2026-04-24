@@ -1,4 +1,4 @@
-# Iteration 18 Review
+# Iteration 17 Review
 
 ## Overview
 
@@ -89,4 +89,4 @@ The following scenarios were tested:
 
 ## Final Outcome
 
-Iteration 18 successfully improved the accessibility, responsiveness, and polish of the slot machine notification system while preserving the architecture and behavior introduced in Iteration 17.
+Iteration 17 successfully improved the accessibility, responsiveness, and polish of the slot machine notification system while preserving the architecture and behavior introduced in Iteration 16.
