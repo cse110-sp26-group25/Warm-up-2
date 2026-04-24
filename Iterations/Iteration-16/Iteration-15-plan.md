@@ -1,4 +1,4 @@
-# Iteration 16 Plan: UI Stability, Accessibility, and System Validation
+# Iteration 15 Plan: UI Stability, Accessibility, and System Validation
 
 ### Goals
 * **UI Stability & Layout**: Cap visible toasts to a maximum of 3 and reorder left-panel widgets so Achievements appear above the Chat log to prevent layout shifting.
