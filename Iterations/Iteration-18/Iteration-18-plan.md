@@ -15,6 +15,9 @@ This iteration aims to refine the toast system by improving accessibility behavi
 Currently, all toast notifications use the same accessibility role behavior. This causes jackpot notifications to be treated similarly to low-priority informational messages by screen readers.
 
 This iteration will:
+
+> > > > > > > c6238c4 (Improve toast accessibility and notification timing)
+
 - use role="alert" for jackpot notifications
 - preserve role="status" for standard informational notifications
 - improve screen reader urgency and accessibility feedback for important events
@@ -26,6 +29,9 @@ This iteration will:
 The current batching implementation delays even the first achievement notification while waiting for additional notifications to merge.
 
 This iteration will:
+
+> > > > > > > c6238c4 (Improve toast accessibility and notification timing)
+
 - immediately display the first achievement notification
 - continue batching additional achievement notifications that appear shortly afterward
 - improve responsiveness while preserving batching behavior
@@ -37,6 +43,11 @@ This iteration will:
 When a high-priority toast interrupts a lower-priority toast, the interrupted toast currently restarts with its full duration after being restored.
 
 This iteration will:
+<<<<<<< HEAD
+=======
+
+> > > > > > > c6238c4 (Improve toast accessibility and notification timing)
+
 - track the remaining display duration of interrupted toasts
 - restore interrupted notifications using their remaining time
 - create more consistent and natural notification timing behavior
@@ -48,6 +59,9 @@ This iteration will:
 The RTP certification validation currently does not warn when config_fingerprint values are missing.
 
 This iteration will:
+
+> > > > > > > c6238c4 (Improve toast accessibility and notification timing)
+
 - add a warning when config_fingerprint is null
 - improve debugging visibility for stale or incomplete certification states
 
