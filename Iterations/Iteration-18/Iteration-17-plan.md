@@ -1,4 +1,4 @@
-# Iteration 18 Plan
+# Iteration 17 Plan
 
 ## Overview
 
@@ -69,4 +69,4 @@ This iteration will:
 
 ## Expected Outcome
 
-By the end of Iteration 18, the slot machine notification system should feel more responsive, accessible, and polished while maintaining compatibility with the existing architecture introduced in Iteration 17.
+By the end of Iteration 17, the slot machine notification system should feel more responsive, accessible, and polished while maintaining compatibility with the existing architecture introduced in Iteration 16.
