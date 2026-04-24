@@ -12,7 +12,7 @@
  *   indices to tease when the orchestrator (ui.js) detects the
  *   `symbols[0] === symbols[1]` near-miss condition pre-animation.
  *   Each teased reel gets its own per-reel extra delay from
- *   `CFG.TEASE_EXTRA_MS` (+1.0 s / +1.5 s / +2.0 s for reels 3/4/5).
+ *   `CFG.TEASE_EXTRA_MS` (+1.5 s / +2.0 s / +2.5 s for reels 3/4/5).
  *   The extra delay is added AFTER fast-play scaling — tension
  *   deliberately survives fast-play mode at full duration.
  *
@@ -60,23 +60,28 @@ const UiReels = (() => {
     /** Fraction of Phase 1 at which motion blur is removed (strip decelerates). */
     BLUR_LIFT_FRACTION:  0.6,
     /**
-     * Iteration 21 — tease-state extra delays per teased reel (ms).
+     * Iteration 21 (revised) — tease-state extra delays per teased reel (ms).
      *
      * When `symbols[0] === symbols[1]` is detected by the orchestrator
      * (ui.js), it passes a `teaseIndices` array to `spinDurations()`.
      * Each teased reel has this many milliseconds added to its spin
      * duration, amplifying the anticipation that a third match might
-     * land. Values escalate per the Iteration 21 plan mandate:
+     * land. Values per the revised Iteration 21 "Gold Master" plan:
      *
-     *   reel 3 (index 2): +1.0 s
-     *   reel 4 (index 3): +1.5 s
-     *   reel 5 (index 4): +2.0 s
+     *   reel 3 (index 2): +1.5 s
+     *   reel 4 (index 3): +2.0 s
+     *   reel 5 (index 4): +2.5 s
+     *
+     * (The first revision of Iter 21 used +1.0/+1.5/+2.0; the revised
+     * plan dated 2026-04 escalated these by +0.5s each after video
+     * playtesting showed the original tense-middle + release pattern
+     * landed too quickly to register as "suspense" on mobile.)
      *
      * The array index corresponds directly to the reel index — so
      * non-teased reels are simply absent from `teaseIndices` and their
      * base duration is used unchanged.
      */
-    TEASE_EXTRA_MS: Object.freeze({ 2: 1000, 3: 1500, 4: 2000 }),
+    TEASE_EXTRA_MS: Object.freeze({ 2: 1500, 3: 2000, 4: 2500 }),
   });
 
   // ── DOM helper ─────────────────────────────────────────────────────

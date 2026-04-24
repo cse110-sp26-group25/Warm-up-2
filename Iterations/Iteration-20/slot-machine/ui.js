@@ -15,8 +15,10 @@
  *   • Tease state. When a spin's pre-determined result shows
  *     `symbols[0] === symbols[1]`, the spin loop extends reels 3/4/5
  *     by +1.0s/+1.5s/+2.0s (via `UiReels.spinDurations(fastPlay,
- *     teaseIndices)`) and kicks off `Audio.playTensionRamp(2000)`,
- *     a 220Hz→880Hz sawtooth slide that lands exactly as reel 5 stops.
+ *     teaseIndices)`) and kicks off `Audio.playTensionRamp(2500)`,
+ *     a 220Hz→880Hz sawtooth slide that lands exactly as reel 5 stops,
+ *     plus `Audio.fadeOutMusic(2500)` so the music dims during the
+ *     tension window and the sawtooth sits in the sonic foreground.
  *   • Rank evolution sync. `UiMascot.updateRankEvolution()` is called
  *     alongside `_updatePlayerRankBadge()` on every win and at boot so
  *     the mascot's `.gold-plated` / `.polished-chrome` class stays in
@@ -373,8 +375,13 @@
         && result.symbols[0] !== undefined
         && result.symbols[0] === result.symbols[1]) {
       teaseIndices.push(2, 3, 4);
-      teaseRampMs = UiReels.CFG.TEASE_EXTRA_MS[4] || 2000;
+      teaseRampMs = UiReels.CFG.TEASE_EXTRA_MS[4] || 2500;
       Audio.playTensionRamp(teaseRampMs);
+      // Iteration 21 (revised) — also dim the background music during
+      // the tease window so the sawtooth slide is the sonic foreground.
+      // The fadeOutMusic timing matches the ramp duration; music
+      // naturally re-enters after the win-sting fires when reels lock.
+      Audio.fadeOutMusic(teaseRampMs);
     }
 
     const durations = UiReels.spinDurations(fastPlay, teaseIndices);
@@ -385,6 +392,14 @@
     );
 
     // As each reel settles: play thunk SFX and update the reel's ARIA label.
+    // Iteration 21 (revised) — per the plan mandate, the win-sting
+    // must be tied to `uiReels:complete` for Reel Index 4 (not the
+    // generic "all reels done" signal). In this implementation reel 4
+    // is always the last reel to settle (PER_REEL_STAGGER is positive
+    // and reels are staggered left-to-right), so `spinPromises[4]`
+    // resolves strictly after `spinPromises[0..3]`. Awaiting it alone
+    // is equivalent to `Promise.all` for this codebase, and the
+    // explicit dependency on reel 4 makes the intent unambiguous.
     spinPromises.forEach((p, i) => p.then(() => {
       Audio.playReelStop(i);
       const sym       = GameLogic.getSymbolById(result.symbols[i]);
@@ -392,6 +407,10 @@
       if (container && sym) container.setAttribute('aria-label', sym.label);
     }));
 
+    // Iteration 21 (revised) — the win-sting gate. Await reel 4 first
+    // (mandatory per plan), then gate on the remaining reels defensively
+    // in case a future iteration changes stagger direction.
+    await spinPromises[GameLogic.REEL_COUNT - 1];  // = spinPromises[4]
     await Promise.all(spinPromises);
 
     // ── Outcome ──────────────────────────────────────────────────

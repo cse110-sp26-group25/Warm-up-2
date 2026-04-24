@@ -78,7 +78,17 @@
 
 ### Rationale
 
-Iteration 21 was framed as the "Gold Master" deployment, with five distinct mandate groups (logic fix, retention, sensory pacing, performance, production seal). The most important observation from reading the plan carefully before starting work was that mandate #1 ("Authoritative Logic Fix: Sequential Matching") was **already implemented**. The Iteration 20 `_resolve` function at line 233-240 uses exactly the break-on-first-mismatch pattern the plan specified; `[X, X, Y, X, X]` already correctly returns `two`, and `[X, Y, Y, Y, Y]` already returns `loss`. The plan's suggestion to "slightly buff three and four multipliers" was predicated on a change that would have reduced win frequency — but since the change wasn't actually needed (the logic was already strict), buffing would have *broken* the 87% base-game target.
+Iteration 21 was framed as the "Gold Master" deployment, with five distinct mandate groups (logic fix, retention, sensory pacing, performance, production seal). The most important observation from reading the plan carefully before starting work was that mandate #1 ("Authoritative Logic Fix: Sequential Matching") was **already implemented**. The Iteration 20 `_resolve` function uses exactly the break-on-first-mismatch pattern the plan specified; `[X, X, Y, X, X]` already correctly returns `two`, and `[X, Y, Y, Y, Y]` already returns `loss`. The plan's suggestion to "slightly buff three and four multipliers" was predicated on a change that would have reduced win frequency — but since the change wasn't actually needed (the logic was already strict), buffing would have *broken* the 87% base-game target.
+
+**This was proven empirically, not just argued.** The +10% buff the plan specified was applied literally: PAYOUTS.TWO and PAYOUTS.THREE multiplied by 1.10, with matching values propagated into `smoke-test.js`'s in-suite PAYOUTS copy. Running the smoke-test then produced:
+
+| Metric | Pre-buff (Iter 16/20) | Post-buff (Iter 21 plan) | Target |
+|---|---|---|---|
+| Base-game RTP | 87.115% | **95.178%** | 87.0% ± 0.5% |
+| Total RTP | 92.352% | **100.414%** | 92.0% |
+| Smoke-test | 20/20 pass | **19/20 fail** | 20/20 |
+
+A 100.4% RTP means the house loses money every spin on average — catastrophic. The buff was reverted, the smoke-test was restored to 20/20 pass, and the decision trail (with the +10% multiplier values shown in comments for future reference) was documented in the PAYOUTS JSDoc. The rewrite itself stays — it's a clarity re-statement, and a strictly better documentation of the intended algorithm via explicit test cases in the `_resolve` JSDoc.
 
 This is the second iteration in a row where a plan mandate landed on code that was already correct from a prior iteration (Iteration 20's RTP-tuning mandate had the same flavor). The correct response is to *verify, document, and move on* rather than perform a no-op refactor that might introduce bugs. I documented the sequential-matching rule with explicit test-case examples in the `_resolve` JSDoc, updated the gameLogic header to note that the Iteration 21 plan's buffing proposal was rejected on empirical grounds, and spent the iteration's actual work budget on the four mandate groups that *did* have genuine work to do.
 

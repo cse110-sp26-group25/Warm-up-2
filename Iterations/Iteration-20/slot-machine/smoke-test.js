@@ -56,6 +56,9 @@ const SYMBOLS = [
 
 // Keep in sync with PAYOUTS in gameLogic.js — smoke-test mirrors game constants.
 // Iteration 16 — table tuned to 87 % base-game RTP (92 % total incl. jackpot).
+// Iteration 21 — +10% buff on TWO and THREE was tested empirically and reverted:
+// it pushed base RTP to 95.18% (target 87%), violating originalprompt.txt's 92%
+// total RTP mandate. See iteration-21-log-entry.md for the full decision trail.
 const PAYOUTS = {
   FIVE:  { jackpot: 0, seven: 560, gear: 168, bolt: 84,   chip: 45,   robo: 28,   nut: 13.5, screw: 8 },
   FOUR:  {               seven: 135, gear:  40, bolt: 20,   chip: 11,   robo:  7,   nut:  3.5, screw: 2 },

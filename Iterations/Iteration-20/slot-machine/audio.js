@@ -299,6 +299,58 @@ const Audio = (() => {
     osc.stop(now + dur);
   }
 
+  /**
+   * Iteration 21 (revised) — fade the background music gain toward
+   * silence over the supplied duration, then restore it.
+   *
+   * Used to dim the music during the tease-state window so the
+   * tension-ramp sawtooth lives in the sonic foreground. When the
+   * reels finish and the win-sting fires, the music should have
+   * already been quietly re-approaching its original level.
+   *
+   * Implementation:
+   *   1. Capture the current target music gain (CONFIG.DEFAULT_MUSIC
+   *      if music is enabled, 0 otherwise) — this is the level we'll
+   *      restore to at the end of the fade.
+   *   2. Schedule a linearRamp from current gain → 0.0001 over the
+   *      first 60% of `durationMs`.
+   *   3. Hold at 0.0001 for the middle 20% (the dramatic pause).
+   *   4. Schedule a linearRamp back to the original level over the
+   *      last 20% — so by the time the final reel lands, music is
+   *      back at full volume, synchronised with the win-sting.
+   *
+   * If music is disabled or the context isn't available, this is a
+   * no-op — `_musicGain` won't exist until the first unlock() call.
+   *
+   * Safe to call during an existing fade: setValueAtTime at `now`
+   * re-anchors the schedule to the current realised value, cancelling
+   * any in-flight ramp implicitly.
+   *
+   * @param {number} durationMs - Total fade-out-and-back duration (ms).
+   * @returns {void}
+   */
+  function _fadeOutMusic(durationMs) {
+    if (!_musicGain) return;
+    const ctx = _getCtx();
+    const now = ctx.currentTime;
+    const dur = Math.max(0.2, durationMs / 1000);
+    const targetGain = _musicEnabled ? CONFIG.DEFAULT_MUSIC : 0;
+    // Anchor to current realised value (cancels any in-flight ramp).
+    const currentValue = _musicGain.gain.value || targetGain;
+    _musicGain.gain.cancelScheduledValues(now);
+    _musicGain.gain.setValueAtTime(currentValue, now);
+    // Phase 1: ramp down over 60% of duration.
+    const dipEnd    = now + dur * 0.60;
+    const holdEnd   = now + dur * 0.80;
+    const restoreEnd = now + dur;
+    // linearRampToValueAtTime(0) is safe here; exponentialRamp requires > 0.
+    _musicGain.gain.linearRampToValueAtTime(0.0001, dipEnd);
+    // Phase 2: hold near-silence for the dramatic pause.
+    _musicGain.gain.setValueAtTime(0.0001, holdEnd);
+    // Phase 3: ramp back to the original level.
+    _musicGain.gain.linearRampToValueAtTime(targetGain, restoreEnd);
+  }
+
   // ── Background music: simple robotic arpeggio loop ──────────────
 
   /** Note set (C-minor pentatonic-ish). */
@@ -357,6 +409,17 @@ const Audio = (() => {
      * @returns {void}
      */
     playTensionRamp(durationMs) { _playTensionRamp(durationMs); },
+
+    /**
+     * Iteration 21 (revised) — fade music down and back up over a window.
+     *
+     * Used during the tease spin to dim BGM for the sawtooth ramp,
+     * then restore music just as the final reel lands and win-sting fires.
+     *
+     * @param {number} durationMs - Total fade-out-and-back duration (ms).
+     * @returns {void}
+     */
+    fadeOutMusic(durationMs) { _fadeOutMusic(durationMs); },
 
     /**
      * Enable or disable sound effects.

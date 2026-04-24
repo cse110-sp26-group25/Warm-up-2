@@ -6,23 +6,38 @@
  * totalWinnings, balance) are read from and written back to the `State`
  * module so they survive page reloads.
  *
- * Iteration 21 — production seal:
- *   • `CONFIG.DEBUG_MODE` (default: false) gates all diagnostic console
- *     output in this module. `verifyRTP()` runs the same computation
- *     but skips its verbose console.log in production. A runtime
- *     override (`window.__ROBO_SLOTS_DEBUG = true`) restores logging
- *     from DevTools without a source edit.
- *   • The `_resolve` sequential-matching contract is re-documented
- *     with explicit test-case examples ("Starting on the First One"
- *     rule). No functional change — Iteration 16's implementation
- *     already enforces strict left-to-right matching with break-on-
- *     mismatch. The Iteration 21 plan mandated re-statement of this
- *     invariant alongside its accompanying examples.
- *   • No change to PAYOUTS. Smoke-test confirms base RTP 87.115% /
- *     total 92.352% unchanged. The plan's proposal to "slightly buff
- *     the three and four payout multipliers" was predicated on a
- *     stricter-matching change that turned out to already be in place
- *     — so buffing would have broken the 87% base-game target.
+ * ═══════════════════════════════════════════════════════════════════
+ *  Iteration 21 — Gold Master & Final Rectification
+ * ═══════════════════════════════════════════════════════════════════
+ *
+ * `_resolve(syms, bet)` rewritten to the plan's literal "Chain Rule"
+ * algorithm with explicit `target` / `matchCount` / break-on-mismatch
+ * structure and worked test-case examples in the JSDoc. The rewrite
+ * is functionally equivalent to the Iteration 20 implementation but
+ * substantially clearer; verified against the plan's specific cases
+ * [X,X,Y,X,X] → two and [Y,X,X,X,X] → loss.
+ *
+ * PAYOUTS table: the plan mandated a +10% buff on TWO and THREE
+ * multipliers "to maintain 92% RTP" after the stricter rewrite. This
+ * was applied, empirically tested, and REVERTED when smoke-test
+ * showed base-game RTP rising to 95.18% (target: 87%). The plan's
+ * premise — that the rewrite would reduce win frequency — turned out
+ * to be false because the Iteration 20 baseline already broke on
+ * first mismatch. Keeping the buff would have violated the 92%
+ * total RTP constitutional requirement in originalprompt.txt. See
+ * the PAYOUTS JSDoc comments and iteration-21-log-entry.md §Rationale
+ * for the full decision trail.
+ *
+ * Final post-Iter-21 measured values (smoke-test, 1M spins, seed 12345):
+ *   base-game RTP: 87.115 %     (target: 87.0% ± 0.5% — PASS)
+ *   jackpot RTP:    5.236 %     (single-run lottery variance)
+ *   total RTP:     92.352 %     (target: 92.0% — PASS)
+ *
+ * Iteration 16–20 carry-forwards retained:
+ *   • Closure-sealing of `_resolve`, `_applyPity`, `_weightedPickSymbol`,
+ *     `_buildReel`, `_getBalance`, `_validateBet` — all private.
+ *   • Mulberry32 PRNG for deterministic smoke-test seeds.
+ *   • `verifyRTP()` defaulting to 3 M spins with ±0.5% base-game gate.
  *
  * ═══════════════════════════════════════════════════════════════════
  *  Iteration 16 changes
@@ -115,11 +130,10 @@ const GameLogic = (() => {
      * `window.__ROBO_SLOTS_DEBUG = true` at runtime via DevTools),
      * diagnostic output is restored.
      *
-     * The gate is read through `_debugEnabled()` (defined below the
-     * CONFIG block) so it honours the runtime override — setting
-     * DEBUG_MODE to true in source OR setting the window flag both
-     * enable logging. This lets a reviewer enable verbose mode
-     * without editing the frozen CONFIG.
+     * The gate is read through `_debugEnabled()` so it honours the
+     * runtime override — setting DEBUG_MODE to true in source OR
+     * setting the window flag both enable logging. This lets a
+     * reviewer enable verbose mode without editing frozen CONFIG.
      */
     DEBUG_MODE:       false,
     /**
@@ -152,9 +166,32 @@ const GameLogic = (() => {
       FIVE:  Object.freeze({ jackpot: 0, seven: 560, gear: 168, bolt: 84,   chip: 45,   robo: 28,   nut: 13.5,screw: 8 }),
       /** Four-of-a-kind. */
       FOUR:  Object.freeze({               seven: 135, gear:  40, bolt: 20,   chip: 11,   robo:  7,   nut:  3.5,screw: 2 }),
-      /** Three-of-a-kind. Three `jackpot` symbols also pay the pool. */
+      /**
+       * Three-of-a-kind. Three `jackpot` symbols also pay the pool.
+       *
+       * Iteration 21 — Math Buff REVERTED (values unchanged from Iteration 16).
+       * The Gold Master plan mandated +10% on THREE and TWO tiers to
+       * compensate for the stricter Chain Rule rewrite. But empirical
+       * smoke-test with the +10% buff applied showed base-game RTP rose
+       * to 95.18% (target: 87%, overshoot: +8.2 pp, total RTP > 100%).
+       *
+       * Root cause: the plan's premise — that stricter matching would
+       * lower win frequency — was incorrect. The Iteration 20 baseline
+       * `_resolve` already broke on first mismatch (exactly the
+       * behaviour the plan asks to "install"). The rewrite is a clarity
+       * re-statement, not a behaviour change, so no compensating buff
+       * is needed. Applying the buff would break the 92% total RTP
+       * constitutional requirement in originalprompt.txt.
+       *
+       * The constitutional RTP mandate (92%) takes precedence over the
+       * plan's prescriptive buff value (which was itself in service of
+       * the same 92% target). See iteration-21-log-entry.md §Rationale.
+       */
       THREE: Object.freeze({ jackpot: 0, seven: 335, gear:  84, bolt: 41,   chip: 25,   robo: 17,   nut:  8.5,screw: 5 }),
-      /** Two-of-a-kind (small change). `jackpot` intentionally absent. */
+      /**
+       * Two-of-a-kind (small change). `jackpot` intentionally absent.
+       * Iteration 21 — REVERTED (see THREE above for explanation).
+       */
       TWO:   Object.freeze({               seven:  16.5, gear: 7.75, bolt: 4.85, chip: 3.4, robo: 2.2, nut: 1.65, screw: 0.83 }),
     }),
   });
@@ -242,22 +279,17 @@ const GameLogic = (() => {
   /**
    * Iteration 21 — read the effective debug-mode flag.
    *
-   * Returns true if EITHER the frozen `CONFIG.DEBUG_MODE` is true OR
-   * the runtime override `window.__ROBO_SLOTS_DEBUG === true` has been
-   * set from DevTools. The runtime override is checked lazily on each
-   * call so a developer can toggle verbose mode on and off without
-   * reloading the page.
+   * Returns true if EITHER `CONFIG.DEBUG_MODE` is true OR the runtime
+   * override `window.__ROBO_SLOTS_DEBUG === true` has been set from
+   * DevTools. The runtime override is checked lazily so a developer
+   * can toggle verbose mode without reloading the page.
    *
-   * This function is deliberately closure-local — it has no reason to
-   * be on the public API, and exposing it would just give attackers a
-   * simple way to discover whether DEBUG_MODE is currently on.
+   * Closure-local — never exposed on the public API.
    *
-   * @returns {boolean} True if diagnostic console output should be emitted.
+   * @returns {boolean} True if diagnostic console output should emit.
    */
   function _debugEnabled() {
     if (CONFIG.DEBUG_MODE) return true;
-    // `typeof window` check avoids a ReferenceError in Node.js
-    // (smoke-test harness, cert-generation script, etc.)
     if (typeof window !== 'undefined' && window.__ROBO_SLOTS_DEBUG === true) {
       return true;
     }
@@ -265,68 +297,99 @@ const GameLogic = (() => {
   }
 
   /**
-   * Resolve the centre-row payline with strict left-to-right sequential matching.
+   * Resolve the centre-row payline with STRICT consecutive-match semantics.
    *
-   * @description Private closure function — removed from the public API in
-   *   Iteration 16. Previously exposed as `GameLogic._resolve(syms, bet)`,
-   *   which let attackers inspect payout math directly via DevTools. Now
-   *   only `spin()` and `verifyRTP()` can call it, and neither exposes it
-   *   to the caller.
+   * ═══════════════════════════════════════════════════════════════════
+   * Iteration 21 — The "Chain Rule" rewrite
+   * ═══════════════════════════════════════════════════════════════════
    *
-   *   Iteration 21 — the "Starting on the First One" rule is enforced
-   *   here and documented explicitly. Match counting begins at
-   *   `syms[0]` and breaks on the FIRST mismatch — there is no
-   *   scatter-pattern logic. This matches professional slot-machine
-   *   left-to-right payline semantics:
+   * This function was reviewed against video evidence of the Iteration 20
+   * build showing left-to-right chain-matching behaviour that didn't
+   * match player intuition. The revised implementation below re-states
+   * the algorithm in the literal form mandated by the Iteration 21 plan:
    *
-   *     [seven, seven, seven, seven, seven]  → 'five'  (5-of-a-kind)
-   *     [seven, seven, gear,  seven, seven]  → 'two'   (chain breaks at idx 2)
-   *     [seven, seven, seven, gear,  seven]  → 'three' (chain breaks at idx 3)
-   *     [gear,  seven, seven, seven, seven]  → 'loss'  (idx 1 != idx 0)
-   *     [seven, gear,  gear,  gear,  gear ]  → 'loss'  (idx 1 != idx 0)
+   *     1. Take `target = syms[0]` as the anchor symbol.
+   *     2. Initialise `matchCount = 1`.
+   *     3. Iterate `i` from 1 to 4 (inclusive).
+   *        If `syms[i] === target`, increment matchCount.
+   *        The moment `syms[i] !== target`, BREAK.
+   *     4. No matches beyond the break point can be counted. Ever.
    *
-   *   This is identical to the Iteration 16 implementation — the match
-   *   counter `matchCount` starts at 1 (for `syms[0]`) and increments
-   *   while consecutive symbols equal the anchor, breaking on first
-   *   mismatch. Re-documented here with explicit test-case examples
-   *   for the Iteration 21 plan mandate.
+   * Worked test cases (verified against the Iteration 21 plan spec):
    *
-   *   Also flags a near-miss when `CONFIG.NEAR_MISS_HIGHS` high-value
-   *   symbols appear anywhere on the line.
+   *     [seven, seven, seven, seven, seven]  → 'five'  (matchCount=5)
+   *     [seven, seven, seven, seven, gear ]  → 'four'  (break at i=4)
+   *     [seven, seven, seven, gear,  seven]  → 'three' (break at i=3)
+   *     [seven, seven, gear,  seven, seven]  → 'two'   (break at i=2,
+   *                                                       later 'seven's
+   *                                                       CANNOT count)
+   *     [seven, gear,  seven, seven, seven]  → 'loss'  (break at i=1,
+   *                                                       matchCount=1)
+   *     [gear,  seven, seven, seven, seven]  → 'loss'  (target='gear',
+   *                                                       never matches
+   *                                                       a 'seven')
    *
-   * @param {string[]} syms - The five centre-row symbol ids.
-   * @param {number}   bet  - Bet amount in dollars.
+   * Iteration 21 closure-sealing is preserved — this remains a private
+   * helper inside the IIFE. DevTools cannot reach `GameLogic._resolve`.
+   *
+   * @param {string[]} syms - The five centre-row symbol ids (length 5).
+   * @param {number}   bet  - Bet amount in dollars (> 0).
    * @returns {{payout:number, type:string, nearMiss:boolean}} Resolution.
    */
   function _resolve(syms, bet) {
-    const anchor = syms[0];
+    // ── Step 1: anchor ─────────────────────────────────────────────
+    const target = syms[0];
 
+    // ── Step 2: count consecutive matches, breaking on first miss ──
     let matchCount = 1;
-    for (let i = 1; i < syms.length; i++) {
-      if (syms[i] === anchor) matchCount++;
-      else break;
+    for (let i = 1; i < CONFIG.REEL_COUNT; i++) {
+      if (syms[i] === target) {
+        matchCount++;
+      } else {
+        // CRITICAL: break immediately. Non-consecutive matches that
+        // appear after `i` are NOT counted, ever. This is the rule
+        // the Iteration 21 plan mandates re-stating.
+        break;
+      }
     }
 
+    // ── Step 3: map matchCount → payout tier ───────────────────────
+    //
+    // Tier selection is ordered from highest to lowest so a 5-of-a-kind
+    // is never misreported as a 3-of-a-kind (though with the strict
+    // matchCount above this cannot happen anyway). Jackpot-anchor wins
+    // on tiers 3, 4, 5 return `type:'jackpot'` with payout 0 here;
+    // the caller (spin()) adds the jackpot pool payout on top.
     if (matchCount === 5) {
-      if (anchor === 'jackpot') return { payout: 0, type: 'jackpot', nearMiss: false };
-      const mult = CONFIG.PAYOUTS.FIVE[anchor] || 1;
+      if (target === 'jackpot') {
+        return { payout: 0, type: 'jackpot', nearMiss: false };
+      }
+      const mult = CONFIG.PAYOUTS.FIVE[target] || 0;
       return { payout: +(bet * mult).toFixed(2), type: 'five', nearMiss: false };
     }
     if (matchCount === 4) {
-      if (anchor === 'jackpot') return { payout: 0, type: 'jackpot', nearMiss: false };
-      const mult = CONFIG.PAYOUTS.FOUR[anchor] || 0;
+      if (target === 'jackpot') {
+        return { payout: 0, type: 'jackpot', nearMiss: false };
+      }
+      const mult = CONFIG.PAYOUTS.FOUR[target] || 0;
       if (mult) return { payout: +(bet * mult).toFixed(2), type: 'four', nearMiss: false };
     }
     if (matchCount === 3) {
-      if (anchor === 'jackpot') return { payout: 0, type: 'jackpot', nearMiss: false };
-      const mult = CONFIG.PAYOUTS.THREE[anchor] || 0;
+      if (target === 'jackpot') {
+        return { payout: 0, type: 'jackpot', nearMiss: false };
+      }
+      const mult = CONFIG.PAYOUTS.THREE[target] || 0;
       if (mult) return { payout: +(bet * mult).toFixed(2), type: 'three', nearMiss: false };
     }
     if (matchCount === 2) {
-      const mult = CONFIG.PAYOUTS.TWO[anchor] || 0;
+      const mult = CONFIG.PAYOUTS.TWO[target] || 0;
       if (mult) return { payout: +(bet * mult).toFixed(2), type: 'two', nearMiss: false };
     }
 
+    // ── Step 4: loss — flag near-miss if high-value symbols appear ─
+    // Near-miss is independent of matchCount — it's a UX hint that a
+    // player was "close" by having N+ high-value symbols anywhere on
+    // the payline (even if they didn't form a consecutive chain).
     const highCount = syms.filter(s => s === 'jackpot' || s === 'seven').length;
     if (highCount >= CONFIG.NEAR_MISS_HIGHS) {
       return { payout: 0, type: 'loss', nearMiss: true };
@@ -684,8 +747,6 @@ const GameLogic = (() => {
       const withinTarget = Math.abs(baseRTP - BASE_TARGET) <= TOLERANCE;
 
       // Iteration 21 — diagnostic output gated behind DEBUG_MODE.
-      // Production boot skips the verbose console.log so user consoles
-      // stay clean; set `window.__ROBO_SLOTS_DEBUG = true` to restore.
       if (_debugEnabled()) {
         // eslint-disable-next-line no-console
         console.log(
@@ -853,17 +914,20 @@ const GameLogic = (() => {
       const sd   = Math.sqrt(batchBaseRtps.reduce((a, v) => a + (v - mean) ** 2, 0) / n);
       const ciHalfWidth = 1.96 * sd / Math.sqrt(n);
 
-      // eslint-disable-next-line no-console
-      console.log(
-        `[GameLogic.verifyRTPBatched] spins=${grandWagered.toLocaleString()} ` +
-        `(${batchBaseRtps.length} batches × ${batchSize.toLocaleString()})` +
-        (stoppedEarly ? ' [early stop]' : '') + '\n' +
-        `  base RTP:       ${baseRTP.toFixed(3)} % (target: ${BASE_RTP_TARGET.toFixed(1)} % ± ${TOLERANCE} %)\n` +
-        `  jackpot RTP EV: ${jackpotRTP_ev.toFixed(3)} % (analytical)\n` +
-        `  total RTP:      ${totalRTP.toFixed(3)} %\n` +
-        `  95% CI:         ± ${ciHalfWidth.toFixed(4)} pp\n` +
-        `  withinTarget:   ${withinTarget}`
-      );
+      // Iteration 21 — diagnostic output gated behind DEBUG_MODE.
+      if (_debugEnabled()) {
+        // eslint-disable-next-line no-console
+        console.log(
+          `[GameLogic.verifyRTPBatched] spins=${grandWagered.toLocaleString()} ` +
+          `(${batchBaseRtps.length} batches × ${batchSize.toLocaleString()})` +
+          (stoppedEarly ? ' [early stop]' : '') + '\n' +
+          `  base RTP:       ${baseRTP.toFixed(3)} % (target: ${BASE_RTP_TARGET.toFixed(1)} % ± ${TOLERANCE} %)\n` +
+          `  jackpot RTP EV: ${jackpotRTP_ev.toFixed(3)} % (analytical)\n` +
+          `  total RTP:      ${totalRTP.toFixed(3)} %\n` +
+          `  95% CI:         ± ${ciHalfWidth.toFixed(4)} pp\n` +
+          `  withinTarget:   ${withinTarget}`
+        );
+      }
 
       return {
         totalSpins:    grandWagered,
