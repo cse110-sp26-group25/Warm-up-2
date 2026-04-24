@@ -6,7 +6,7 @@
 | **Input tokens** | ~15,600 (Baseline + Immersive Prompt) |
 | **Output tokens** | ~103,500 |
 | **Total tokens** | ~119,100 tokens |
-| **Query time** | 312 minutes 58 seconds |
+| **Query time** | 32 minutes 58 seconds |
 
 ## Iteration Information
 
