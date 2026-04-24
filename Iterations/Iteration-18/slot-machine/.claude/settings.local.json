@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node /c/Users/sw060/Warm-up-2/Iterations/Iteration-17/slot-machine/scripts/verifyRtp.js --spins=300000 --batch=100000 --quiet)",
+      "Bash(echo \"EXIT $?\")",
+      "Bash(cmd.exe *)",
+      "Bash(powershell.exe *)",
+      "Bash(ls *)"
+    ]
+  }
+}
